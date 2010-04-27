@@ -1,7 +1,7 @@
 grammar OpenAir;
 
 options {
-    language=Python;
+   language=Python;
 }
 
 tokens {
@@ -34,22 +34,19 @@ tokens {
 }
 
 
-file
-    : zone NEWLINE EOF
-    ;
 
 zone
-    : INCLUDE WS* EQ WS* (YES|NO) WS*
+    : include title EOF
     ;
 
-NEWLINE
-    : '\r'? '\n'
-    ;
+title	:	(TITLE EQ YES EOL)
+	;
 
-WS
-    : (' '|'\t'|'\n'|'\r')+ {skip();}
-    ;
+include	:	(INCLUDE EQ YES EOL)
+	;
 
-ZONE_TITLE
-    : ('a'..'z'|'A'..'Z'|'0'..'9'|'.'|' ')+'\r'? '\n'
-    ;
+
+EOL :  '\r'? '\n';
+
+WS  : (' ' |'\t' )+ {$channel = HIDDEN;} ;
+
