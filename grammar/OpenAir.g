@@ -18,12 +18,16 @@ tokens {
     TO='TO';
 
     EQ='=';
-
+    
+    FEET='F';
     AGL='AGL';
     AMSL='AMSL';
     FL='FL';
     SFC='SFC';
     UNL='UNL';
+    
+    NORTH='N';
+    EAST='E';
     
     CTACTR='CTA/CTR';
     OTHER='OTHER';
@@ -36,15 +40,44 @@ tokens {
 
 
 zone
-    : include title EOF
-    ;
+    : (include |title |type| tops |base )* geometry EOF   ;
 
-title	:	(TITLE EQ YES EOL)
-	;
+title	:	(TITLE EQ TITLE_NAME EOL);
 
-include	:	(INCLUDE EQ YES EOL)
-	;
+include	:	(INCLUDE EQ (YES|NO) EOL);
+	
+type	:	(TYPE EQ (CTACTR|OTHER|PROHIBITED|RESTRICTED) EOL);
 
+tops	:	(TOPS EQ altitude EOL);
+base	:	(BASE EQ altitude EOL);
+
+altitude:	(ALTI)? (AGL|AMSL|FL|SFC|UNL);
+
+geometry:	(point (point|arc)+) ;
+
+point	:	(POINT EQ coords EOL);
+arc	:	((CLOCKWISE|ANTICLOCKWISE) RADIUS EQ FLOAT CENTRE EQ coords TO EQ coords EOL);
+
+coords	:	TITLE_NAME;
+
+ALTI	:	(INTEGER 'F');
+
+NCOORD	:	'N' ('0'..'9')+;
+ECOORD	:	'E' ('0'..'9')+;
+	
+DIGIT   
+	:  ( '0'..'9' ) ;
+LETTER	
+	:  ('a'..'z')|('A'..'Z') ;
+
+FLOAT	:	
+	(DIGIT)+ '.' (DIGIT)+;
+	
+INTEGER 
+	:  (DIGIT)+ ;
+
+TITLE_NAME
+	:	 ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'.'|' ')*;
 
 EOL :  '\r'? '\n';
 
