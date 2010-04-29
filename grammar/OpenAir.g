@@ -40,9 +40,9 @@ tokens {
 
 
 zone
-    : (include |title |type| tops |base )* geometry EOF   ;
+    : (include|title|type|tops|base)* geometry EOF   ;
 
-title	:	(TITLE EQ TITLE_NAME EOL);
+title	:	(TITLE EQ (LETTER)+ EOL);
 
 include	:	(INCLUDE EQ (YES|NO) EOL);
 	
@@ -58,12 +58,9 @@ geometry:	(point (point|arc)+) ;
 point	:	(POINT EQ coords EOL);
 arc	:	((CLOCKWISE|ANTICLOCKWISE) RADIUS EQ FLOAT CENTRE EQ coords TO EQ coords EOL);
 
-coords	:	TITLE_NAME;
+coords	:	('N' INTEGER) ('E' INTEGER);
 
 ALTI	:	(INTEGER 'F');
-
-NCOORD	:	'N' ('0'..'9')+;
-ECOORD	:	'E' ('0'..'9')+;
 	
 DIGIT   
 	:  ( '0'..'9' ) ;
@@ -76,8 +73,8 @@ FLOAT	:
 INTEGER 
 	:  (DIGIT)+ ;
 
-TITLE_NAME
-	:	 ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'.'|' ')*;
+//TITLE_NAME
+//	:	 ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'.'|' ')*;
 
 EOL :  '\r'? '\n';
 
