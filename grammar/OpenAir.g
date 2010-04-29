@@ -1,64 +1,84 @@
 grammar OpenAir;
 
 options {
-   language=Python;
+  language=Python;
 }
 
 tokens {
-    INCLUDE='INCLUDE';
-    TYPE='TYPE';
-    TITLE='TITLE';
-    TOPS='TOPS';
-    BASE='BASE';
-    POINT='POINT';
-    ANTICLOCKWISE='ANTI-CLOCKWISE';
-    CLOCKWISE='CLOCKWISE';
-    RADIUS='RADIUS';
-    CENTRE='CENTRE';
-    TO='TO';
-
+    AC='AC';
+    R='R';
+    Q='Q';
+    P='P';
+    A='A';
+    B='B';
+    C='C';
+    D='D';
+    GP='GP';
+    CTR='CTR';
+    W='W';
+    AN='AN';
+    AH='AH';
+    AL='AL';
+    AT='AT';
+    V='V';
+    PLUS='+';
+    MINUS='-';
     EQ='=';
-    
+    X='X';
+    W='W';
+    Z='Z';
+    DP='DP';
+    DA='DA';
+    DB='DB';
+    DC='DC';
+    DY='DY';
+
+    COLON=':';
+    COMMA=',';
     FEET='F';
     AGL='AGL';
     AMSL='AMSL';
     FL='FL';
     SFC='SFC';
     UNL='UNL';
-    
-    NORTH='N';
-    EAST='E';
-    
-    CTACTR='CTA/CTR';
-    OTHER='OTHER';
-    PROHIBITED='PROHIBITED';
-    RESTRICTED='RESTRICTED';
-    YES='YES';
-    NO='NO';
 }
 
+aclass : AC (R|Q|P|A|B|C|D|GP|CTR|W) EOL;
 
+aceil	:	AH altitude EOL;
+afloor	:	AL altitude EOL;
 
-zone
-    : (include|title|type|tops|base)* geometry EOF   ;
+arc_coord	:	DB coords COMMA coords EOL;
 
-title	:	(TITLE EQ (LETTER)+ EOL);
-
-include	:	(INCLUDE EQ (YES|NO) EOL);
+// never used for french AS
+arc_angle
+	:	DA INTEGER COMMA INTEGER COMMA INTEGER EOL;
 	
-type	:	(TYPE EQ (CTACTR|OTHER|PROHIBITED|RESTRICTED) EOL);
+poly_point
+	:	DP coords EOL;
+	
+// never used for french AS
+label_coord
+	:	AT coords EOL;
+	
+circle	:	DC FLOAT EOL;
 
-tops	:	(TOPS EQ altitude EOL);
-base	:	(BASE EQ altitude EOL);
+var_set	:	V (direction|center|width|zoom) EOL;
+
+direction
+	:	D EQ (PLUS|MINUS);
+center	:	X EQ coords;
+width	:	W EQ FLOAT;
+zoom	:	Z EQ FLOAT;
+
+//never used for french AS
+airway	:	DY coords EOL;
 
 altitude:	(ALTI)? (AGL|AMSL|FL|SFC|UNL);
 
-geometry:	(point (point|arc)+) ;
+coords	:	coord 'N' coord 'E';
 
-point	:	(POINT EQ coords EOL);
-arc	:	((CLOCKWISE|ANTICLOCKWISE) RADIUS EQ FLOAT CENTRE EQ coords TO EQ coords EOL);
-
-coords	:	('N' INTEGER) ('E' INTEGER);
+coord	:	INTEGER COLON INTEGER COLON INTEGER;
 
 ALTI	:	(INTEGER 'F');
 	
@@ -72,9 +92,6 @@ FLOAT	:
 	
 INTEGER 
 	:  (DIGIT)+ ;
-
-//TITLE_NAME
-//	:	 ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'.'|' ')*;
 
 EOL :  '\r'? '\n';
 
