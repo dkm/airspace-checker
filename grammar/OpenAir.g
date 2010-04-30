@@ -1,99 +1,73 @@
 grammar OpenAir;
 
 options {
-  language=Python;
+    output=AST;
+    language=Python;
 }
 
 tokens {
-    AC='AC';
-    R='R';
-    Q='Q';
-    P='P';
-    A='A';
-    B='B';
-    C='C';
-    D='D';
-    GP='GP';
-    CTR='CTR';
-    W='W';
-    AN='AN';
-    AH='AH';
-    AL='AL';
-    AT='AT';
-    V='V';
+   
     PLUS='+';
     MINUS='-';
     EQ='=';
-    X='X';
-    W='W';
-    Z='Z';
-    DP='DP';
-    DA='DA';
-    DB='DB';
-    DC='DC';
-    DY='DY';
-
+ 
     COLON=':';
     COMMA=',';
-    FEET='F';
-    AGL='AGL';
-    AMSL='AMSL';
-    FL='FL';
-    SFC='SFC';
-    UNL='UNL';
 }
 
-aclass : AC (R|Q|P|A|B|C|D|GP|CTR|W) EOL;
+zone	:	aclass ANAME aceil afloor;
 
-aceil	:	AH altitude EOL;
-afloor	:	AL altitude EOL;
+                       
+aclass : 'AC'  ('R'|'Q'|'P'|'A'|'B'|'C'|'D'|'GP'|'CTR'|'W') EOL;
 
-arc_coord	:	DB coords COMMA coords EOL;
+aceil	:	'AH'  altitude EOL;
+afloor	:	'AL'  altitude EOL;
+
+arc_coord	:	'DB'  coords COMMA coords EOL;
 
 // never used for french AS
 arc_angle
-	:	DA INTEGER COMMA INTEGER COMMA INTEGER EOL;
+	:	'DA'  INTEGER COMMA INTEGER COMMA INTEGER EOL;
 	
 poly_point
-	:	DP coords EOL;
+	:	'DP'  coords EOL;
 	
 // never used for french AS
 label_coord
-	:	AT coords EOL;
+	:	'AT'  coords EOL;
 	
-circle	:	DC FLOAT EOL;
+circle	:	'DC'  (INTEGER '.' INTEGER) EOL;
 
-var_set	:	V (direction|center|width|zoom) EOL;
+var_set	:	'V'  (direction|center|width|zoom) EOL;
 
 direction
-	:	D EQ (PLUS|MINUS);
-center	:	X EQ coords;
-width	:	W EQ FLOAT;
-zoom	:	Z EQ FLOAT;
+	:	'D' EQ (PLUS|MINUS);
+center	:	'X' EQ coords;
+width	:	'W' EQ (INTEGER '.' INTEGER);
+zoom	:	'Z' EQ (INTEGER '.' INTEGER);
 
 //never used for french AS
-airway	:	DY coords EOL;
+airway	:	'DY'  coords EOL;
 
-altitude:	(ALTI)? (AGL|AMSL|FL|SFC|UNL);
+altitude:	(alti)? ('AGL'|'AMSL'|'FL'|'SFC'|'UNL');
 
-coords	:	coord 'N' coord 'E';
+coords	:	coord  'N'  coord  'E';
 
 coord	:	INTEGER COLON INTEGER COLON INTEGER;
 
-ALTI	:	(INTEGER 'F');
-	
-DIGIT   
-	:  ( '0'..'9' ) ;
-LETTER	
-	:  ('a'..'z')|('A'..'Z') ;
+alti	:	(INTEGER 'F');
 
-FLOAT	:	
-	(DIGIT)+ '.' (DIGIT)+;
-	
+
+ANAME
+: 'AN ' (('A'..'Z')|('a'..'z')| ('0'..'9')|' '|'.'|'_')+ ~( '\r' | '\n' );
+
 INTEGER 
-	:  (DIGIT)+ ;
+	:  ('0'..'9')+;
 
 EOL :  '\r'? '\n';
 
-WS  : (' ' |'\t' )+ {$channel = HIDDEN;} ;
+//WS  : (' '){$channel=HIDDEN;};
 
+LINE_COMMENT
+  :  '*' ~( '\r' | '\n' )* {$channel=HIDDEN;}
+  ;
