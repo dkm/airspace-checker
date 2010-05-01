@@ -128,7 +128,7 @@ class Parser:
             if self.current_zone.ring != None: ## this is a new zone
                 self.zones.append(self.current_zone)
                 print "Appended zone '%s' to zone line (%d)" % (self.current_zone.name, 
-                                                                len(self.current_zone))
+                                                                len(self.zones))
                 self.current_zone = Zone(name=m.group('name'))
                 print "New zone with name:", m.group('name')
             else: ## ring is empty, this is the begining of a zone
@@ -142,7 +142,7 @@ class Parser:
             if self.current_zone.ring != None: ## this is a new zone
                 self.zones.append(self.current_zone)
                 print "Appended zone '%s' to zone line (%d)" % (self.current_zone.name, 
-                                                                len(self.current_zone))
+                                                                len(self.zones))
                 self.current_zone = Zone(aclass=m.group('aclass'))
                 print "New zone with class:", m.group('aclass')
             else: ## ring is empty, this is the begining of a zone
