@@ -257,13 +257,15 @@ layerDefinition = layer.GetLayerDefn()
 
 i=0
 for zone in p.zones:
-    feature = osgeo.ogr.Feature(layerDefinition)
-    feature.SetGeometry(zone.finish())
-    feature.SetFID(i)
-    print "added poly in feature ", i,
-    i+=1
-    layer.CreateFeature(feature)
-    print ", created feture and added to layer "
+    try:
+        poly = zone.finish()
+        feature = osgeo.ogr.Feature(layerDefinition)
+        feature.SetGeometry(poly)
+        feature.SetFID(i)
+
+        i+=1
+        layer.CreateFeature(feature)
+    except Exception,e:
+        print "Circle for zone", zone.name
 
 shp.Destroy()
-print "finished, wrote in ", sys.argv[2]
