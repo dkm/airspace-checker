@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import re
-import osgeo.ogr as ogr
+import osgeo.ogr
 import osgeo.osr
 import os
 import os.path
@@ -76,13 +76,13 @@ class Zone:
         self.aclass = None
 
         self.ring = None
-
+        
     def addPoint(self, x, y):
         """
         Adds a point to the polygon describing the zone
         """
         if self.ring == None:
-            self.ring = ogr.Geometry(ogr.wkbLinearRing)
+            self.ring = osgeo.ogr.Geometry(osgeo.ogr.wkbLinearRing)
         self.ring.AddPoint(x,y)
 
     def finish(self):
@@ -90,19 +90,41 @@ class Zone:
         Closes the zone and returns the polygon
         """
         self.ring.CloseRings()
-        poly = ogr.Geometry(ogr.wkbPolygon)
+        poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
         poly.AddGeometry(self.ring)
         return poly
 
 
-def extract_dms(fragment):
-    f = fragment.replace('.', ':')
-    try:
-        dn,mn,sn = [float(x) for x in f.split(':')]
-    except Exception, e:
-        print "error on: ", fragment
-        raise e
-    return (dn,mn,sn)
+def latlon_to_deg(m, i=None):
+    if i == None:
+        lat = m.group('lat')
+        lon = m.group('lon')
+        latdir = m.group('d1')
+        londir = m.group('d2')
+    else:
+        lat = m.group('lat%d' % i)
+        lon = m.group('lon%d' % i)
+        latdir = m.group('d1%d' % i)
+        londir = m.group('d2%d' % i)
+        
+    lats = [float(x) for x in lat.split(':')]
+    lons = [float(x) for x in lon.split(':')]
+
+    if len(lats) == 3: ## hours,mins,secs
+        lat_deg = lats[0] + lats[1]/60.0 + lats[2]/3600.
+    elif len(lats) == 2: ## hours, mins.decimals
+        lat_deg = lats[0] + lats[1]/60.0
+    if latdir == "S":
+        lat_deg = -lat_deg
+
+    if len(lons) == 3: ## hours,mins,secs
+        lon_deg = lons[0] + lons[1]/60.0 + lons[2]/3600.
+    elif len(lons) == 2: ## hours, mins.decimals
+        lon_deg = lons[0] + lons[1]/60.0
+    if londir == "W":
+        lon_deg = -lon_deg
+
+    return (lat_deg, lon_deg)
 
 class Parser:
 
@@ -238,12 +260,9 @@ p = Parser(sys.argv[1])
 
 p.parse()
 
-for zone in p.zones:
-    print zone.ring
-
 shapePath = sys.argv[2]
 
-driver=ogr.GetDriverByName('ESRI Shapefile')
+driver=osgeo.ogr.GetDriverByName('ESRI Shapefile')
 
 shapePath = validateShapePath(shapePath)
 if os.path.exists(shapePath): os.remove(shapePath)
