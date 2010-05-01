@@ -49,24 +49,60 @@ re_lines = [aclass,
             airway]
 
 
-
 class Zone:
+    """
+    Describe a zone
+    """
+    
     def __init__(self, name=None, aclass=None):
+        """
+        The name of the Zone
+        """
         self.name = name
-        self.ring = None
-        self.aclass = None
+
+        """
+        The ceiling of the zone
+        """
         self.ceil = None
+
+        """
+        The floor of the zone
+        """
         self.floor = None
 
+        """
+        The class of the zone
+        """
+        self.aclass = None
+
+        self.ring = None
+
     def addPoint(self, x, y):
+        """
+        Adds a point to the polygon describing the zone
+        """
         if self.ring == None:
             self.ring = ogr.Geometry(ogr.wkbLinearRing)
         self.ring.AddPoint(x,y)
 
     def finish(self):
+        """
+        Closes the zone and returns the polygon
+        """
+        self.ring.CloseRings()
         poly = ogr.Geometry(ogr.wkbPolygon)
         poly.AddGeometry(self.ring)
         return poly
+
+
+def extract_dms(fragment):
+    f = fragment.replace('.', ':')
+    try:
+        dn,mn,sn = [float(x) for x in f.split(':')]
+    except Exception, e:
+        print "error on: ", fragment
+        raise e
+    return (dn,mn,sn)
 
 class Parser:
 
@@ -133,8 +169,8 @@ class Parser:
         print "arc coord", m.group('north1'), m.group('east1'), m.group('north2'), m.group('east2')
         
         for i in range(1,3):
-            dn,mn,sn = [float(x) for x in m.group('north%d' % i).split(':')]
-            de,me,se = [float(x) for x in m.group('east%d' % i).split(':')]
+            dn,mn,sn = extract_dms(m.group('north%d' % i))
+            de,me,se = extract_dms(m.group('east%d' % i))
         
             n = dn + mn/60.0 + sn/3600.
             e = de + me/60.0 + se/3600.
@@ -146,8 +182,8 @@ class Parser:
 
 
     def poly_point_action(self, line, m):
-        dn,mn,sn = [float(x) for x in m.group('north').split(':')]
-        de,me,se = [float(x) for x in m.group('east').split(':')]
+        dn,mn,sn = extract_dms(m.group('north'))
+        de,me,se = extract_dms(m.group('east'))
         
         n = dn + mn/60.0 + sn/3600.
         e = de + me/60.0 + se/3600.
