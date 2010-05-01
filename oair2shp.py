@@ -171,26 +171,12 @@ class Parser:
 
     def arc_coord_action(self, line, m):
         for i in range(1,3):
-            # dn,mn,sn = extract_dms(m.group('lat%d' % i))
-            # de,me,se = extract_dms(m.group('lon%d' % i))
-            
             (n,e) = latlon_to_deg(m, i)
-            # n = dn + mn/60.0 + sn/3600.
-            # e = de + me/60.0 + se/3600.
-
             self.current_zone.addPoint(e,n)
 
 
     def poly_point_action(self, line, m):
-        print line
-        # dn,mn,sn = extract_dms(m.group('lat'))
-        # de,me,se = extract_dms(m.group('lon'))
-        
         (n,e) = latlon_to_deg(m)
-
-        # n = dn + mn/60.0 + sn/3600.
-        # e = de + me/60.0 + se/3600.
-
         self.current_zone.addPoint(e,n)
 
     def set_direction_action(self, line, m):
@@ -257,6 +243,6 @@ for zone in p.zones:
         i+=1
         layer.CreateFeature(feature)
     except Exception,e:
-        print "Circle for zone", zone.name
+        print "[DROPPED] zone (probably because it contains an arc/circle)", zone.name
 
 shp.Destroy()
