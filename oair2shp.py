@@ -226,7 +226,6 @@ class Parser:
                                                             len(self.zones))
 
 
-
 def getSpatialReferenceFromProj4(spatialReferenceAsProj4):
     spatialReference = osgeo.osr.SpatialReference()
     spatialReference.ImportFromProj4(spatialReferenceAsProj4)
@@ -252,8 +251,6 @@ if os.path.exists(shapePath): os.remove(shapePath)
 shp = driver.CreateDataSource(shapePath)
 
 spatialReference = getSpatialReferenceFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
-# spatialReference = osgeo.osr.SpatialReference()
-# spatialReference.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 
 layer = shp.CreateLayer('layer1', spatialReference, osgeo.ogr.wkbPolygon)
 layerDefinition = layer.GetLayerDefn()
@@ -263,7 +260,6 @@ for zone in p.zones:
     feature = osgeo.ogr.Feature(layerDefinition)
     feature.SetGeometry(zone.finish())
     feature.SetFID(i)
-
     print "added poly in feature ", i,
     i+=1
     layer.CreateFeature(feature)
