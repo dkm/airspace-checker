@@ -18,23 +18,23 @@ import sys
 
 aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$')
 
-coords = '(?P<north%s>\d+(:|\.)\d+(:|\.)\d+)\s?N (?P<east%s>\d+(:|\.)\d+(:|\.)\d+)\s?E'
+coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
 alti = '(?P<height>\d+F )?((?P<ref>AGL|AMSL|FL|SFC|UNL)|(?P<fl>FL\d+))$'
 
 aceil = re.compile('^AH ' + alti)
 afloor = re.compile('^AL ' + alti)
 aname = re.compile('^AN (?P<name>.*)$')
 
-poly_point = re.compile('^DP ' + coords % ("", "") + '$')
+poly_point = re.compile('^DP ' + coords % ("","","","") + '$')
 
-arc_coord = re.compile('^DB ' + coords % ("1","1") +','+ coords  % ("2","2") + '$')
+arc_coord = re.compile('^DB ' + coords % ("1","1","1","1") +','+ coords  % ("2","2","2","2") + '$')
 
 set_direction = re.compile('^V D=(?P<direction>\+|-)$')
-set_center = re.compile('^V X=' + coords % ("", "") + '$')
+set_center = re.compile('^V X=' + coords % ("","","","") + '$')
 set_width = re.compile('^V W=(?P<width>\d+\.\d+)$')
 set_zoom = re.compile('^V Z=(?P<zoom>\d+\.\d+)$')
 
-airway = re.compile('^DY ' + coords % ("", "") + '$')
+airway = re.compile('^DY ' + coords %  ("","","","") + '$')
 
 re_lines = [aclass, 
             aceil, 
@@ -146,35 +146,14 @@ class Parser:
                                airway : self.airway_action}
 
     def aname_action(self, line, m):
-        if self.current_zone != None:
-            if self.current_zone.ring != None: ## this is a new zone
-                self.zones.append(self.current_zone)
-                print "Appended zone '%s' to zone line (%d)" % (self.current_zone.name, 
-                                                                len(self.zones))
-                self.current_zone = Zone(name=m.group('name'))
-                print "New zone with name:", m.group('name')
-            else: ## ring is empty, this is the begining of a zone
-                self.current_zone.name = m.group('name')
-        else:
-            self.current_zone = Zone(name=m.group('name'))
-            print "New zone with name:", m.group('name')
+        self.current_zone = Zone(name=m.group('name'))
 
     def aclass_action(self, line, m):
         if self.current_zone != None:
-            if self.current_zone.ring != None: ## this is a new zone
-                self.zones.append(self.current_zone)
-                print "Appended zone '%s' to zone line (%d)" % (self.current_zone.name, 
-                                                                len(self.zones))
-                self.current_zone = Zone(aclass=m.group('aclass'))
-                print "New zone with class:", m.group('aclass')
-            else: ## ring is empty, this is the begining of a zone
-                self.current_zone.aclass = m.group('aclass')
-        else:
-            self.current_zone = Zone(name=m.group('aclass'))
-            print "New zone with class:", m.group('aclass')
+            self.zones.append(self.current_zone)
+        self.current_zone = Zone(aclass=m.group('aclass'))
 
     def aceil_action(self, line, m):
-        print "aceil", m.group('height'), m.group('ref'), m.group('fl')
         if m.group('height'):
             self.current_zone.ceil = " ".join((m.group('height'), m.group('ref')))
         elif m.group('fl'):
@@ -183,7 +162,6 @@ class Parser:
             self.current_zone.ceil = m.group('ref')
 
     def afloor_action(self, line, m):
-        print "afloor", m.group('height'), m.group('ref'), m.group('fl')
         if m.group('height'):
             self.current_zone.floor = " ".join((m.group('height'), m.group('ref')))
         elif m.group('fl'):
@@ -192,47 +170,43 @@ class Parser:
             self.current_zone.floor = m.group('ref')
 
     def arc_coord_action(self, line, m):
-        print "arc coord", m.group('north1'), m.group('east1'), m.group('north2'), m.group('east2')
-        
         for i in range(1,3):
-            dn,mn,sn = extract_dms(m.group('north%d' % i))
-            de,me,se = extract_dms(m.group('east%d' % i))
-        
-            n = dn + mn/60.0 + sn/3600.
-            e = de + me/60.0 + se/3600.
+            # dn,mn,sn = extract_dms(m.group('lat%d' % i))
+            # de,me,se = extract_dms(m.group('lon%d' % i))
+            
+            (n,e) = latlon_to_deg(m, i)
+            # n = dn + mn/60.0 + sn/3600.
+            # e = de + me/60.0 + se/3600.
 
-            print "[Circle Approx] add point to ring", m.group('north%d' % i), m.group('east%d' % i)
-
-            print "  -> %f / %f" %(n,e)
             self.current_zone.addPoint(e,n)
 
 
     def poly_point_action(self, line, m):
-        dn,mn,sn = extract_dms(m.group('north'))
-        de,me,se = extract_dms(m.group('east'))
+        print line
+        # dn,mn,sn = extract_dms(m.group('lat'))
+        # de,me,se = extract_dms(m.group('lon'))
         
-        n = dn + mn/60.0 + sn/3600.
-        e = de + me/60.0 + se/3600.
+        (n,e) = latlon_to_deg(m)
 
-        print "add point to ring", m.group('north'), m.group('east')
-        print "  -> %f / %f" %(n,e)
+        # n = dn + mn/60.0 + sn/3600.
+        # e = de + me/60.0 + se/3600.
+
         self.current_zone.addPoint(e,n)
 
     def set_direction_action(self, line, m):
-        print "set direction", m.group('direction')
+        pass
 
     def set_center_action(self, line, m):
-        print "set center", m.group('north'), m.group('east')
+        pass
 
     def set_zoom_action(self, line, m):
-        print "set zoom", m.group('zoom')
+        pass
 
     def set_width_action(self, line, m):
-        print "set width", m.group('width')
+        pass
 
     def airway_action(self, line, m):
-        print "airway", m.group('north'), m.group('east')
-
+        pass
             
     def parse(self):
         fin = open(self.fname)
@@ -244,8 +218,6 @@ class Parser:
         
         if self.current_zone != None:
             self.zones.append(self.current_zone)
-            print "Appended zone '%s' to zone list (%d)" % (self.current_zone.name, 
-                                                            len(self.zones))
 
 
 def getSpatialReferenceFromProj4(spatialReferenceAsProj4):
