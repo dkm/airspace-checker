@@ -7,10 +7,19 @@ import os
 import os.path
 import sys
 
+##
+## The following RE are used to parse the OpenAir file
+## It is rather weak compared to a real grammar.
+## An antrl3 grammar is available in grammar/OpenAir.g
+## But having some problems with antlr 3.0.1 and unable to
+## install antlr 3.2, I decided to switch to a simpler
+## but still ok solution. 
+##
+
 aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$')
 
-coords = '(?P<north%s>\d+:\d+:\d+) N (?P<east%s>\d+:\d+:\d+) E'
-alti = '(?P<height>\d+F )?(?P<ref>AGL|AMSL|FL|SFC|UNL)$'
+coords = '(?P<north%s>\d+(:|\.)\d+(:|\.)\d+)\s?N (?P<east%s>\d+(:|\.)\d+(:|\.)\d+)\s?E'
+alti = '(?P<height>\d+F )?((?P<ref>AGL|AMSL|FL|SFC|UNL)|(?P<fl>FL\d+))$'
 
 aceil = re.compile('^AH ' + alti)
 afloor = re.compile('^AL ' + alti)
