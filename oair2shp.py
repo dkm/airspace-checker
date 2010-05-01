@@ -152,16 +152,20 @@ class Parser:
             print "New zone with class:", m.group('aclass')
 
     def aceil_action(self, line, m):
-        print "aceil", m.group('height'), m.group('ref')
+        print "aceil", m.group('height'), m.group('ref'), m.group('fl')
         if m.group('height'):
             self.current_zone.ceil = " ".join((m.group('height'), m.group('ref')))
+        elif m.group('fl'):
+            self.current_zone.ceil = m.group('ref')
         else:
             self.current_zone.ceil = m.group('ref')
 
     def afloor_action(self, line, m):
-        print "afloor", m.group('height'), m.group('ref')
+        print "afloor", m.group('height'), m.group('ref'), m.group('fl')
         if m.group('height'):
-            self.current_zone.floor = " ".join(m.group('height'), m.group('ref'))
+            self.current_zone.floor = " ".join((m.group('height'), m.group('ref')))
+        elif m.group('fl'):
+            self.current_zone.floor = m.group('ref')
         else:
             self.current_zone.floor = m.group('ref')
 
