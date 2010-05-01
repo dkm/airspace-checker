@@ -1,3 +1,25 @@
+//
+//   airspace checker
+//   Copyright (C) 2010  Marc Poulhiès
+//
+//   This program is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+//   This program is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+//
+//   You should have received a copy of the GNU General Public License
+//   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+//
+// BEWARE, THIS GRAMMAR IS BROKEN. USE IT ONLY AS A BASIS
+//
+
 grammar OpenAir;
 
 options {
@@ -15,13 +37,16 @@ tokens {
     COMMA=',';
 }
 
-zone	:	aclass ANAME aceil afloor;
+zone	:	aclass aname aceil afloor geometry;
 
+aname 	:	ANAME EOL;
                        
 aclass : 'AC'  ('R'|'Q'|'P'|'A'|'B'|'C'|'D'|'GP'|'CTR'|'W') EOL;
 
-aceil	:	'AH'  altitude EOL;
-afloor	:	'AL'  altitude EOL;
+aceil	:	'AH' altitude EOL -> altitude;
+afloor	:	'AL' altitude EOL -> altitude;
+
+geometry:	(poly_point|circle|arc_coord|var_set|direction)+;
 
 arc_coord	:	'DB'  coords COMMA coords EOL;
 
@@ -59,7 +84,7 @@ alti	:	(INTEGER 'F');
 
 
 ANAME
-: 'AN ' (('A'..'Z')|('a'..'z')| ('0'..'9')|' '|'.'|'_')+ ~( '\r' | '\n' );
+: 'AN ' (('A'..'Z')|('a'..'z')| ('0'..'9')|' '|'.'|'_')+;
 
 INTEGER 
 	:  ('0'..'9')+;
