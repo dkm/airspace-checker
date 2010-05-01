@@ -3,7 +3,8 @@
 import re
 import osgeo.ogr as ogr
 import osgeo.osr
-
+import os
+import os.path
 import sys
 
 aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$')
@@ -43,7 +44,6 @@ re_lines = [aclass,
 class Zone:
     def __init__(self, name=None, aclass=None):
         self.name = name
-        self.poly = ogr.Geometry(ogr.wkbPolygon)
         self.ring = None
         self.aclass = None
         self.ceil = None
@@ -52,8 +52,12 @@ class Zone:
     def addPoint(self, x, y):
         if self.ring == None:
             self.ring = ogr.Geometry(ogr.wkbLinearRing)
-            self.poly.AddGeometry(self.ring)
         self.ring.AddPoint(x,y)
+
+    def finish(self):
+        poly = ogr.Geometry(ogr.wkbPolygon)
+        poly.AddGeometry(self.ring)
+        return poly
 
 class Parser:
 
@@ -126,7 +130,7 @@ class Parser:
             n = dn + mn/60.0 + sn/3600.
             e = de + me/60.0 + se/3600.
 
-            print "add point to ring", m.group('north%d' % i), m.group('east%d' % i)
+            print "[Circle Approx] add point to ring", m.group('north%d' % i), m.group('east%d' % i)
 
             print "  -> %f / %f" %(n,e)
             self.current_zone.addPoint(e,n)
@@ -173,6 +177,15 @@ class Parser:
                                                             len(self.zones))
 
 
+
+def getSpatialReferenceFromProj4(spatialReferenceAsProj4):
+    spatialReference = osgeo.osr.SpatialReference()
+    spatialReference.ImportFromProj4(spatialReferenceAsProj4)
+    return spatialReference
+
+def validateShapePath(shapePath):
+    return os.path.splitext(str(shapePath))[0] + '.shp'
+
 p = Parser(sys.argv[1])
 
 p.parse()
@@ -180,18 +193,26 @@ p.parse()
 for zone in p.zones:
     print zone.ring
 
-driver=ogr.GetDriverByName('ESRI Shapefile')
-shp=driver.CreateDataSource(sys.argv[2])
-spatialReference = osgeo.osr.SpatialReference()
-spatialReference.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+shapePath = sys.argv[2]
 
-layer = shp.CreateLayer('layer1', spatialReference, osgeo.ogr.wkbUnknown)
+driver=ogr.GetDriverByName('ESRI Shapefile')
+
+shapePath = validateShapePath(shapePath)
+if os.path.exists(shapePath): os.remove(shapePath)
+
+shp = driver.CreateDataSource(shapePath)
+
+spatialReference = getSpatialReferenceFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+# spatialReference = osgeo.osr.SpatialReference()
+# spatialReference.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+
+layer = shp.CreateLayer('layer1', spatialReference, osgeo.ogr.wkbPolygon)
 layerDefinition = layer.GetLayerDefn()
 
 i=0
 for zone in p.zones:
     feature = osgeo.ogr.Feature(layerDefinition)
-    feature.SetGeometry(zone.poly)
+    feature.SetGeometry(zone.finish())
     feature.SetFID(i)
 
     print "added poly in feature ", i,
