@@ -93,6 +93,8 @@ class Zone:
         """
         self.aclass = None
 
+        self.current_center = None
+
         self.ring = None
         
     def addPoint(self, x, y):
@@ -112,6 +114,44 @@ class Zone:
         poly.AddGeometry(self.ring)
         return poly
 
+
+def getCircle(center, p2):
+    dist = center.Distance(p2)
+
+    buf = center.Buffer(dist,90)
+
+    ring = buf.GetGeometryRef(0)
+
+    return (buf,ring)
+
+def distOgrPTupleP(ogrp, tuplep):
+    bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
+    x,y,z = tuplep
+    bufp.AddPoint(x,y,z)
+
+    return ogrp.Distance(bufp)
+
+def findNearestIndexInLineString(ls, point):
+    md = distOgrPTupleP(point, ls.GetPoint(0))
+    mi = 0
+    
+    for i in xrange(1, ls.GetPointCount()):
+        d = distOgrPTupleP(point, ls.GetPoint(i))
+        if d < md:
+            md = d
+            mi = i
+
+    return (mi,md)
+
+def createPoint(n,e):
+    bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
+    bufp.AddPoint(n,e)
+    return bufp
+
+def getArc(ls, startPoint, endPoint):
+    si,sd = findNearestIndexInLineString(ls, startPoint)
+    ei,ed = findNearestIndexInLineString(ls, endPoint)
+    return (si, ei)
 
 def latlon_to_deg(m, i=None):
     if i == None:
@@ -188,10 +228,30 @@ class Parser:
             self.current_zone.floor = m.group('ref')
 
     def arc_coord_action(self, line, m):
-        for i in range(1,3):
-            (n,e) = latlon_to_deg(m, i)
-            self.current_zone.addPoint(e,n)
+        (n1, e1) = latlon_to_deg(m, 1)
+        (n2, e2) = latlon_to_deg(m, 2)
 
+        p1 = createPoint(n1, e1)
+        p2 = createPoint(n2, e2)
+
+        (buf,ring) = getCircle(self.current_zone.current_center, p1)
+
+        si,ei = getArc(ring, p1, p2)
+        print "Count:", ring.GetPointCount()
+        if si > ei:
+            for i in xrange(si,ei+1,-1):
+                x,y,z = ring.GetPoint(i)
+                print "add [solo] [%d] %f,%f" %(i,y,x)
+                self.current_zone.addPoint(y,x)
+        else: # si >= ei
+            for i in xrange(si,-1,-1):
+                x,y,z = ring.GetPoint(i)
+                self.current_zone.addPoint(y,x)
+                print "add [p1] [%d] %f,%f" %(i,y,x)
+            for i in xrange(ring.GetPointCount()-1, ei, -1):
+                x,y,z = ring.GetPoint(i)
+                self.current_zone.addPoint(y,x)
+                print "add [p2] [%d] %f,%f" %(i,y,x)
 
     def poly_point_action(self, line, m):
         (n,e) = latlon_to_deg(m)
@@ -201,7 +261,8 @@ class Parser:
         pass
 
     def set_center_action(self, line, m):
-        pass
+        n,e = latlon_to_deg(m)
+        self.current_zone.current_center = createPoint(n,e)
 
     def set_zoom_action(self, line, m):
         pass
