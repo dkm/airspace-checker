@@ -24,6 +24,7 @@ import osgeo.osr
 import os
 import os.path
 import sys
+import math
 
 ##
 ## The following RE are used to parse the OpenAir file
@@ -44,8 +45,10 @@ afloor = re.compile('^AL ' + alti)
 aname = re.compile('^AN (?P<name>.*)$')
 
 poly_point = re.compile('^DP ' + coords % ("","","","") + '$')
+circle = re.compile('^DC (?P<radius>\d+(\.\d+)?)$')
 
 arc_coord = re.compile('^DB ' + coords % ("1","1","1","1") +','+ coords  % ("2","2","2","2") + '$')
+
 
 set_direction = re.compile('^V D=(?P<direction>\+|-)$')
 set_center = re.compile('^V X=' + coords % ("","","","") + '$')
@@ -54,13 +57,14 @@ set_zoom = re.compile('^V Z=(?P<zoom>\d+\.\d+)$')
 
 airway = re.compile('^DY ' + coords %  ("","","","") + '$')
 
-re_lines = [aclass, 
-            aceil, 
-            afloor, 
-            aname, 
-            arc_coord, 
-            poly_point, 
-            set_direction, 
+re_lines = [aclass,
+            aceil,
+            afloor,
+            aname,
+            arc_coord,
+            circle,
+            poly_point,
+            set_direction,
             set_center,
             set_width,
             set_zoom,
@@ -94,6 +98,7 @@ class Zone:
         self.aclass = None
 
         self.current_center = None
+        self.direction = "cw"
 
         self.ring = None
         
@@ -112,17 +117,38 @@ class Zone:
         self.ring.CloseRings()
         poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
         poly.AddGeometry(self.ring)
+        print "finished,", self.ring.GetPointCount()
+
         return poly
 
 
 def getCircle(center, p2):
     dist = center.Distance(p2)
-
     buf = center.Buffer(dist,90)
-
     ring = buf.GetGeometryRef(0)
 
     return (buf,ring)
+
+def getCircleByRadius(center, radius):
+    
+    a = 6378137/1852.0
+    b = 6356752.3/1852
+
+    a1 = a*a*math.cos(center.GetX())
+    b1 = b*b*math.sin(center.GetX())
+    ratn = a1*a1 + b1*b1
+    
+    a2 = a*math.cos(center.GetX())
+    b2 = b * math.sin(center.GetX())
+    ratd = a2*a2 + b2*b2
+    R = math.sqrt(ratn/ratd)
+    deg = math.atan(radius/R) * 180 / math.pi
+    print deg
+    buf = center.Buffer(deg, 90)
+    ring = buf.GetGeometryRef(0)
+
+    return (buf,ring)
+    
 
 def distOgrPTupleP(ogrp, tuplep):
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
@@ -195,6 +221,7 @@ class Parser:
                                aceil: self.aceil_action,
                                afloor: self.afloor_action,
                                aname : self.aname_action,
+                               circle : self.circle_action,
                                arc_coord : self.arc_coord_action,
                                poly_point: self.poly_point_action,
                                set_direction: self.set_direction_action,
@@ -239,26 +266,56 @@ class Parser:
         si,ei = getArc(ring, p1, p2)
         print "Count:", ring.GetPointCount()
         if si > ei:
-            for i in xrange(si,ei+1,-1):
-                x,y,z = ring.GetPoint(i)
-                print "add [solo] [%d] %f,%f" %(i,y,x)
-                self.current_zone.addPoint(y,x)
-        else: # si >= ei
-            for i in xrange(si,-1,-1):
-                x,y,z = ring.GetPoint(i)
-                self.current_zone.addPoint(y,x)
-                print "add [p1] [%d] %f,%f" %(i,y,x)
-            for i in xrange(ring.GetPointCount()-1, ei, -1):
-                x,y,z = ring.GetPoint(i)
-                self.current_zone.addPoint(y,x)
-                print "add [p2] [%d] %f,%f" %(i,y,x)
+            
+            if self.current_zone.direction == "cw":
+                for i in xrange(si,ei+1,-1):
+                    x,y,z = ring.GetPoint(i)
+                    print "add [solo] [%d] %f,%f" %(i,y,x)
+                    self.current_zone.addPoint(y,x)
+            else:
+                for i in xrange(si, ring.GetPointCount()):
+                    x,y,z = ring.GetPoint(i)
+                    self.current_zone.addPoint(y,x)
+                    print "add [p1] [%d] %f,%f" %(i,y,x)
+                for i in xrange(0, ei):
+                    x,y,z = ring.GetPoint(i)
+                    self.current_zone.addPoint(y,x)
+                    print "add [p2] [%d] %f,%f" %(i,y,x)
+                
+        else: # si <= ei
+            if self.current_zone.direction == "cw":
+                for i in xrange(si,-1,-1):
+                    x,y,z = ring.GetPoint(i)
+                    self.current_zone.addPoint(y,x)
+                    print "add [p1] [%d] %f,%f" %(i,y,x)
+                for i in xrange(ring.GetPointCount()-1, ei, -1):
+                    x,y,z = ring.GetPoint(i)
+                    self.current_zone.addPoint(y,x)
+                    print "add [p2] [%d] %f,%f" %(i,y,x)
+            else:
+                for i in xrange(si, se+1):
+                    x,y,z = ring.GetPoint(i)
+                    print "add [solo] [%d] %f,%f" %(i,y,x)
+                    self.current_zone.addPoint(y,x)
+                
+    def circle_action(self, line, m):
+        rad = float(m.group('radius'))
+        (buf, ring) = getCircleByRadius(self.current_zone.current_center, rad)
+
+        for i in xrange(ring.GetPointCount()):
+            x,y,z = ring.GetPoint(i)
+            self.current_zone.addPoint(y,x)
 
     def poly_point_action(self, line, m):
         (n,e) = latlon_to_deg(m)
         self.current_zone.addPoint(e,n)
 
     def set_direction_action(self, line, m):
-        pass
+        direct = m.group('direction')
+        if direct == "+":
+            self.current_zone.direct = "cw"
+        elif direct == "-":
+            self.current_zone.direct = "ccw"
 
     def set_center_action(self, line, m):
         n,e = latlon_to_deg(m)
@@ -322,6 +379,7 @@ for zone in p.zones:
         i+=1
         layer.CreateFeature(feature)
     except Exception,e:
+        raise e
         print "[DROPPED] zone (probably because it contains an arc/circle)", zone.name
 
 shp.Destroy()
