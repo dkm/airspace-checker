@@ -17,7 +17,6 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import re
 import osgeo.ogr
 import osgeo.osr
@@ -48,8 +47,6 @@ poly_point = re.compile('^DP ' + coords % ("","","","") + '$')
 circle = re.compile('^DC (?P<radius>\d+(\.\d+)?)$')
 
 arc_coord = re.compile('^DB ' + coords % ("1","1","1","1") +','+ coords  % ("2","2","2","2") + '$')
-
-
 set_direction = re.compile('^V D=(?P<direction>\+|-)$')
 set_center = re.compile('^V X=' + coords % ("","","","") + '$')
 set_width = re.compile('^V W=(?P<width>\d+\.\d+)$')
@@ -122,42 +119,70 @@ class Zone:
         return poly
 
 
-def getCircle(center, p2):
-    dist = center.Distance(p2)
-    buf = center.Buffer(dist,90)
+def getCircle(center, point, quadseg=90):
+    """
+    Returns a tuple with the polygon buffer and the inner ring.
+    Beware that garbage collecting the buffer will garbage collect
+    the ring (within the C code, this means segfault)
+    The buffer uses 'quadseg' segments for each quarter circle.
+    The circle is defined by a 'center' point and another 'point'
+    """
+
+    dist = center.Distance(point)
+    buf = center.Buffer(dist, quadseg)
     ring = buf.GetGeometryRef(0)
 
     return (buf,ring)
 
-def getCircleByRadius(center, radius):
-    
+def getCircleByRadius(center, radius, quadseg):
+    """
+    Returns a tuple with the polygon buffer and the inner ring.
+    Beware that garbage collecting the buffer will garbage collect
+    the ring (within the C code, this means segfault)
+    The buffer uses 'quadseg' segments for each quarter circle.
+    The circle is defined by a 'center' point its radius in nm (nautic mile)
+    Beware that this method applies only to WGS84 data as there is a need for
+    projection when computing the real radius.
+    """
+
     a = 6378137/1852.0
     b = 6356752.3/1852
 
-    a1 = a*a*math.cos(center.GetX())
-    b1 = b*b*math.sin(center.GetX())
-    ratn = a1*a1 + b1*b1
+    a1 = a*a*math.cos(math.radians(center.GetX()))
+    b1 = b*b*math.sin(math.radians(center.GetX()))
+    ratn = a1**2 + b1**2
     
-    a2 = a*math.cos(center.GetX())
-    b2 = b * math.sin(center.GetX())
-    ratd = a2*a2 + b2*b2
+    a2 = a*math.cos(math.radians(center.GetX()))
+    b2 = b * math.sin(math.radian(center.GetX()))
+    ratd = a2**2 + b2**2
     R = math.sqrt(ratn/ratd)
-    deg = math.atan(radius/R) * 180 / math.pi
-    print deg
-    buf = center.Buffer(deg, 90)
+    deg = degrees(math.atan(radius/R))
+
+    buf = center.Buffer(deg, quadseg)
     ring = buf.GetGeometryRef(0)
 
     return (buf,ring)
     
 
-def distOgrPTupleP(ogrp, tuplep):
+def distOgrPTupleP(ogrgeom, tuplep):
+    """
+    Returns the distance between an ogr.Geometry 'ogrgeom'
+    and a point as a tuple 'tuplep' == (x,y,z)
+    """
+
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
     x,y,z = tuplep
     bufp.AddPoint(x,y,z)
 
-    return ogrp.Distance(bufp)
+    return ogrgeom.Distance(bufp)
 
 def findNearestIndexInLineString(ls, point):
+    """
+    Given an ogr.Geometry 'point' and an ogr.Geometry LineString 'ls',
+    returns a tuple with the closest point in 'ls' from 'point' (as
+    a tuple) and the distance between the two.
+    """
+
     md = distOgrPTupleP(point, ls.GetPoint(0))
     mi = 0
     
@@ -170,16 +195,31 @@ def findNearestIndexInLineString(ls, point):
     return (mi,md)
 
 def createPoint(n,e):
+    """
+    Creates an ogr.Geometry Point from the longitude 'n' and
+    latitude 'e'.
+    """
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
     bufp.AddPoint(n,e)
     return bufp
 
 def getArc(ls, startPoint, endPoint):
+    """
+    Given a LineString 'ls', a start point 'startPoint' and an end pont 'endPoint',
+    returns a tuple with the index of the points in 'ls' that are the
+    closests to 'startPoint' and 'endPoint'.
+    """
     si,sd = findNearestIndexInLineString(ls, startPoint)
     ei,ed = findNearestIndexInLineString(ls, endPoint)
     return (si, ei)
 
 def latlon_to_deg(m, i=None):
+    """
+    Converts a match object for the coord regular expression
+    to a tuple (latitude, longitude)
+    If the match object contains multiple coordinates matches,
+    give the index with 'i'
+    """
     if i == None:
         lat = m.group('lat')
         lon = m.group('lon')
@@ -211,12 +251,28 @@ def latlon_to_deg(m, i=None):
     return (lat_deg, lon_deg)
 
 class Parser:
+    """
+    A Parser object is used to parse an OpenAir formated
+    text file into corresponding OGR objects.
+    """
 
     zones = []
     current_zone = None
 
     def __init__(self, fname):
+        """
+        Creates a Parser object bound to file named 'fname'
+        """
+
         self.fname = fname
+
+        #
+        # parses actions are function with the following 
+        # interface: f(match object, text line)
+        # that are called when a line in the 
+        # input file matches. There should be one action
+        # per regular expression in the re_lines array
+        
         self.parse_actions = { aclass: self.aclass_action,
                                aceil: self.aceil_action,
                                afloor: self.afloor_action,
@@ -231,14 +287,24 @@ class Parser:
                                airway : self.airway_action}
 
     def aname_action(self, line, m):
+        """
+        Creates a new Zone object when a 'AN ...' line is matched
+        """
         self.current_zone = Zone(name=m.group('name'))
 
     def aclass_action(self, line, m):
+        """
+        Sets the class for the current zone being parsed.
+        """
+
         if self.current_zone != None:
             self.zones.append(self.current_zone)
         self.current_zone = Zone(aclass=m.group('aclass'))
 
     def aceil_action(self, line, m):
+        """
+        Sets the ceiling altitude for the current zone being parsed
+        """
         if m.group('height'):
             self.current_zone.ceil = " ".join((m.group('height'), m.group('ref')))
         elif m.group('fl'):
@@ -247,6 +313,10 @@ class Parser:
             self.current_zone.ceil = m.group('ref')
 
     def afloor_action(self, line, m):
+        """
+        Sets the floor altitude for the current zone being parsed
+        """
+
         if m.group('height'):
             self.current_zone.floor = " ".join((m.group('height'), m.group('ref')))
         elif m.group('fl'):
@@ -255,6 +325,10 @@ class Parser:
             self.current_zone.floor = m.group('ref')
 
     def arc_coord_action(self, line, m):
+        """
+        Adds an arc to the current polygon for the zone being parsed
+        """
+
         (n1, e1) = latlon_to_deg(m, 1)
         (n2, e2) = latlon_to_deg(m, 2)
 
@@ -299,6 +373,9 @@ class Parser:
                     self.current_zone.addPoint(y,x)
                 
     def circle_action(self, line, m):
+        """
+        Creates a circle for the zone being parsed.
+        """
         rad = float(m.group('radius'))
         (buf, ring) = getCircleByRadius(self.current_zone.current_center, rad)
 
@@ -307,6 +384,9 @@ class Parser:
             self.current_zone.addPoint(y,x)
 
     def poly_point_action(self, line, m):
+        """
+        Adds a point to the polygon for the zone being parsed.
+        """
         (n,e) = latlon_to_deg(m)
         self.current_zone.addPoint(e,n)
 
