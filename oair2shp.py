@@ -288,13 +288,15 @@ class Parser:
 
     def aname_action(self, line, m):
         """
-        Creates a new Zone object when a 'AN ...' line is matched
+        Creates a new Zone object.
+        Triggered when a 'AN ...' line is matched
         """
         self.current_zone = Zone(name=m.group('name'))
 
     def aclass_action(self, line, m):
         """
         Sets the class for the current zone being parsed.
+        Triggered when a 'AC ...' line is matched
         """
 
         if self.current_zone != None:
@@ -303,7 +305,8 @@ class Parser:
 
     def aceil_action(self, line, m):
         """
-        Sets the ceiling altitude for the current zone being parsed
+        Sets the ceiling altitude for the current zone being parsed.
+        Triggered when a 'AH ...' line is matched
         """
         if m.group('height'):
             self.current_zone.ceil = " ".join((m.group('height'), m.group('ref')))
@@ -314,7 +317,8 @@ class Parser:
 
     def afloor_action(self, line, m):
         """
-        Sets the floor altitude for the current zone being parsed
+        Sets the floor altitude for the current zone being parsed.
+        Triggered when a 'AL ...' line is matched
         """
 
         if m.group('height'):
@@ -326,7 +330,8 @@ class Parser:
 
     def arc_coord_action(self, line, m):
         """
-        Adds an arc to the current polygon for the zone being parsed
+        Adds an arc to the current polygon for the zone being parsed.
+        Triggered when a 'DB ...' line is matched.
         """
 
         (n1, e1) = latlon_to_deg(m, 1)
@@ -375,6 +380,7 @@ class Parser:
     def circle_action(self, line, m):
         """
         Creates a circle for the zone being parsed.
+        Triggered when a 'DC ...' line is matched
         """
         rad = float(m.group('radius'))
         (buf, ring) = getCircleByRadius(self.current_zone.current_center, rad)
@@ -386,11 +392,16 @@ class Parser:
     def poly_point_action(self, line, m):
         """
         Adds a point to the polygon for the zone being parsed.
+        Triggered when a 'DP ...' line is matched
         """
         (n,e) = latlon_to_deg(m)
         self.current_zone.addPoint(e,n)
 
     def set_direction_action(self, line, m):
+        """
+        Sets the direction for the arcs.
+        Triggered when a 'V D=...' line is matched
+        """
         direct = m.group('direction')
         if direct == "+":
             self.current_zone.direct = "cw"
@@ -398,19 +409,44 @@ class Parser:
             self.current_zone.direct = "ccw"
 
     def set_center_action(self, line, m):
+        """
+        Sets the center for circles and arc.
+        Triggered when a 'V X= ...' line is matched
+        """
+
         n,e = latlon_to_deg(m)
         self.current_zone.current_center = createPoint(n,e)
 
     def set_zoom_action(self, line, m):
+        """
+        NOT IMPLEMENTED.
+        Sets the zoom level.
+        Triggered when a 'V Z=...' line is matched
+        """
         pass
 
     def set_width_action(self, line, m):
+        """
+        NOT IMPLEMENTED.
+        Sets width.
+        Triggered when a 'V W=...' line is matched
+        """
         pass
 
     def airway_action(self, line, m):
+        """
+        NOT IMPLEMENTED
+        Adds a segment to an airway.
+        Triggered when a 'DY ...' line is matched
+        """
         pass
             
     def parse(self):
+        """
+        Do the actual parsing.
+        Parsed zones are available in the 'zones' attribute.
+        """
+
         fin = open(self.fname)
         for l in fin.xreadlines():
             for r in re_lines:
@@ -423,12 +459,20 @@ class Parser:
 
 
 def getSpatialReferenceFromProj4(spatialReferenceAsProj4):
+    """
+    Return a new osgeo.osr.SpatialReference object, initialized
+    with the projection defined in 'spatialReferenceAsProj4'.
+    """
     spatialReference = osgeo.osr.SpatialReference()
     spatialReference.ImportFromProj4(spatialReferenceAsProj4)
     return spatialReference
 
 def validateShapePath(shapePath):
+    """
+    Checks path 'shapePath' to the shape file.
+    """
     return os.path.splitext(str(shapePath))[0] + '.shp'
+
 
 p = Parser(sys.argv[1])
 
@@ -443,6 +487,10 @@ if os.path.exists(shapePath): os.remove(shapePath)
 
 shp = driver.CreateDataSource(shapePath)
 
+# use regular WGS84 system.
+# beware that some method rely on this system and won't work
+# correctly if using a different system.
+# These method should be ported to be projection agnostic.
 spatialReference = getSpatialReferenceFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 
 layer = shp.CreateLayer('layer1', spatialReference, osgeo.ogr.wkbPolygon)
@@ -459,7 +507,8 @@ for zone in p.zones:
         i+=1
         layer.CreateFeature(feature)
     except Exception,e:
-        raise e
         print "[DROPPED] zone (probably because it contains an arc/circle)", zone.name
+        print e
 
+# don't forget to destroy the shape object (this will purge content to file)x
 shp.Destroy()
