@@ -102,6 +102,13 @@ def findNearestIndexInLineString(ls, point):
 
     return (mi,md)
 
+def createLineString():
+    """
+    Creates an empty ogr.Geometry LineString.
+    """
+    bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbLineString)
+    return bufp
+
 def createPoint(n,e):
     """
     Creates an ogr.Geometry Point from the longitude 'n' and
