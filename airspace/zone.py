@@ -20,6 +20,9 @@
 import osgeo.ogr
 import util
 
+class ZoneException(Exception):
+    pass
+
 class Zone:
     """
     Describe a zone
@@ -49,10 +52,25 @@ class Zone:
         self.current_center = None
         self.direction = "cw"
 
-        self.finish_need_to_close_ring = False
         self.poly = None
-        self.ring = None
+
         
+
+    def finish(self):
+        raise ZoneException()
+
+class PolyZone(Zone):
+
+    def __init__(self, zone):
+        Zone.__init__(self, zone.name, zone.aclass)
+        self.ceil = zone.ceil
+        self.floor = zone.floor
+        self.current_center = zone.current_center
+        self.direction = zone.direction
+        self.poly = zone.poly
+
+        self.ring = None
+
     def addPoint(self, x, y):
         """
         Adds a point to the polygon describing the zone
@@ -68,11 +86,24 @@ class Zone:
         """
         Closes the zone and returns the polygon
         """
-        if self.finish_need_to_close_ring:
-            self.ring.CloseRings()
-            self.poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
-            self.poly.AddGeometry(self.ring)
-            self.poly.AssignSpatialReference(util.latlong)
-            print "finished,", self.ring.GetPointCount()
 
+        self.ring.CloseRings()
+        self.poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
+        self.poly.AddGeometry(self.ring)
+        self.poly.AssignSpatialReference(util.latlong)
+
+        return self.poly
+
+
+class CircleZone(Zone):
+
+    def __init__(self, zone):
+        Zone.__init__(self, zone.name, zone.aclass)
+        self.ceil = zone.ceil
+        self.floor = zone.floor
+        self.current_center = zone.current_center
+        self.direction = zone.direction
+        self.poly = zone.poly
+
+    def finish(self):
         return self.poly

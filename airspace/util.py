@@ -46,37 +46,35 @@ def flatDistance(p1,p2):
 
     return dist
 
-# def getCircle(center, point, quadseg=90):
-#     """
-#     Returns a tuple with the polygon buffer and the inner ring.
-#     Beware that garbage collecting the buffer will garbage collect
-#     the ring (within the C code, this means segfault)
-#     The buffer uses 'quadseg' segments for each quarter circle.
-#     The circle is defined by a 'center' point and another 'point'
-#     """
+def getCircle(center, point, quadseg=90):
+    """
+    Returns a tuple with the polygon buffer and the inner ring.
+    Beware that garbage collecting the buffer will garbage collect
+    the ring (within the C code, this means segfault)
+    The buffer uses 'quadseg' segments for each quarter circle.
+    The circle is defined by a 'center' point and another 'point'
+    """
 
-#     new_c = createPoint(center.GetY(), center.GetX())
-#     new_c.AssignSpatialReference(latlong)
-#     proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetY(), center.GetX())
-#     ortho.ImportFromProj4(proj)
-#     new_c.TransformTo(ortho)
+    # new_c = createPoint(center.GetX(), center.GetY())
+    # new_c.AssignSpatialReference(latlong)
+    # proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetY(), center.GetX())
+    # ortho.ImportFromProj4(proj)
+    # new_c.TransformTo(ortho)
 
+    # new_p = createPoint(point.GetX(), point.GetY())
+    # new_p.AssignSpatialReference(latlong)
+    # new_p.TransformTo(ortho)
 
-#     new_p = createPoint(point.GetY(), point.GetX())
-#     new_p.AssignSpatialReference(latlong)
-#     new_p.TransformTo(ortho)
+    dist = center.Distance(point)
 
+    buf = center.Buffer(dist, quadseg)
 
-#     dist = new_c.Distance(new_p)
-#     buf = new_c.Buffer(dist, quadseg)
+    # buf.AssignSpatialReference(ortho)
+    # buf.TransformTo(latlong)
 
+    ring = buf.GetGeometryRef(0)
 
-#     buf.AssignSpatialReference(ortho)
-#     buf.TransformTo(latlong)
-
-#     ring = buf.GetGeometryRef(0)
-
-#     return (buf,ring)
+    return (buf,ring)
 
 def getCircleByRadius(center, radius, quadseg=90):
     """
@@ -88,7 +86,7 @@ def getCircleByRadius(center, radius, quadseg=90):
     Beware that this method applies only to WGS84 data as there is a need for
     projection when computing the real radius.
     """
-    new_c = createPoint(center.GetY(), center.GetX())
+    new_c = createPoint(center.GetX(), center.GetY())
     new_c.AssignSpatialReference(latlong)
     proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetY(), center.GetX())
     ortho.ImportFromProj4(proj)

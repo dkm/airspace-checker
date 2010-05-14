@@ -70,6 +70,7 @@ re_lines = [aclass,
             set_width,
             set_zoom,
             airway]
+
 class OAIRParser:
     """
     A OAIRParser object is used to parse an OpenAir formated
@@ -153,6 +154,8 @@ class OAIRParser:
         Adds an arc to the current polygon for the zone being parsed.
         Triggered when a 'DB ...' line is matched.
         """
+        if (self.current_zone.__class__.__name__ == "Zone"):
+            self.current_zone = zone.PolyZone(self.current_zone)
 
         (n1, e1) = util.latlon_to_deg(m, 1)
         (n2, e2) = util.latlon_to_deg(m, 2)
@@ -160,11 +163,11 @@ class OAIRParser:
         p1 = util.createPoint(n1, e1)
         p2 = util.createPoint(n2, e2)
         
-        radius = self.current_zone.current_center.Distance(p1)
-        new_radius = util.flatDistance(self.current_zone.current_center, p1)
-
-        (buf,ring) = util.getCircleByRadius(self.current_zone.current_center, new_radius)
-        # (buf,ring) = util.getCircle(self.current_zone.current_center, p1)
+        # radius = self.current_zone.current_center.Distance(p1)
+        # new_radius = util.flatDistance(self.current_zone.current_center, p1)
+        # print radius, new_radius
+        #(buf,ring) = util.getCircleByRadius(self.current_zone.current_center, new_radius)
+        (buf,ring) = util.getCircle(self.current_zone.current_center, p1)
 
         si,ei = util.getArc(ring, p1, p2)
 
@@ -201,6 +204,8 @@ class OAIRParser:
         """
         rad = float(m.group('radius'))
         (buf, ring) = util.getCircleByRadius(self.current_zone.current_center, rad*1852)
+        if (self.current_zone.__class__.__name__ == "Zone"):
+            self.current_zone = zone.CircleZone(self.current_zone)
         self.current_zone.poly = buf
         # for i in xrange(ring.GetPointCount()):
         #     x,y,z = ring.GetPoint(i)
@@ -212,6 +217,9 @@ class OAIRParser:
         Triggered when a 'DP ...' line is matched
         """
         (n,e) = util.latlon_to_deg(m)
+        if (self.current_zone.__class__.__name__ == "Zone"):
+            self.current_zone = zone.PolyZone(self.current_zone)
+
         self.current_zone.addPoint(e,n)
 
     def set_direction_action(self, line, m):
