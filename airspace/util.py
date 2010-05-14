@@ -26,23 +26,59 @@ import os.path
 import sys
 import math
 
+latlong = osgeo.osr.SpatialReference()
+ortho = osgeo.osr.SpatialReference()
+latlong.ImportFromProj4('+proj=latlong')
 
-def getCircle(center, point, quadseg=90):
-    """
-    Returns a tuple with the polygon buffer and the inner ring.
-    Beware that garbage collecting the buffer will garbage collect
-    the ring (within the C code, this means segfault)
-    The buffer uses 'quadseg' segments for each quarter circle.
-    The circle is defined by a 'center' point and another 'point'
-    """
+def flatDistance(p1,p2):
+   
+    new_p1 = createPoint(p1.GetY(), p1.GetX())
+    new_p1.AssignSpatialReference(latlong)
+    proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (p1.GetY(), p1.GetX())
+    ortho.ImportFromProj4(proj)
+    new_p1.TransformTo(ortho)
 
-    dist = center.Distance(point)
-    buf = center.Buffer(dist, quadseg)
-    ring = buf.GetGeometryRef(0)
+    new_p2 = createPoint(p2.GetY(), p2.GetX())
+    new_p2.AssignSpatialReference(latlong)
+    new_p2.TransformTo(ortho)
+  
+    dist = new_p1.Distance(new_p2)
 
-    return (buf,ring)
+    return dist
 
-def getCircleByRadius(center, radius, quadseg):
+# def getCircle(center, point, quadseg=90):
+#     """
+#     Returns a tuple with the polygon buffer and the inner ring.
+#     Beware that garbage collecting the buffer will garbage collect
+#     the ring (within the C code, this means segfault)
+#     The buffer uses 'quadseg' segments for each quarter circle.
+#     The circle is defined by a 'center' point and another 'point'
+#     """
+
+#     new_c = createPoint(center.GetY(), center.GetX())
+#     new_c.AssignSpatialReference(latlong)
+#     proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetY(), center.GetX())
+#     ortho.ImportFromProj4(proj)
+#     new_c.TransformTo(ortho)
+
+
+#     new_p = createPoint(point.GetY(), point.GetX())
+#     new_p.AssignSpatialReference(latlong)
+#     new_p.TransformTo(ortho)
+
+
+#     dist = new_c.Distance(new_p)
+#     buf = new_c.Buffer(dist, quadseg)
+
+
+#     buf.AssignSpatialReference(ortho)
+#     buf.TransformTo(latlong)
+
+#     ring = buf.GetGeometryRef(0)
+
+#     return (buf,ring)
+
+def getCircleByRadius(center, radius, quadseg=90):
     """
     Returns a tuple with the polygon buffer and the inner ring.
     Beware that garbage collecting the buffer will garbage collect
@@ -52,21 +88,17 @@ def getCircleByRadius(center, radius, quadseg):
     Beware that this method applies only to WGS84 data as there is a need for
     projection when computing the real radius.
     """
+    new_c = createPoint(center.GetY(), center.GetX())
+    new_c.AssignSpatialReference(latlong)
+    proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetY(), center.GetX())
+    ortho.ImportFromProj4(proj)
+    new_c.TransformTo(ortho)
 
-    a = 6378137/1852.0
-    b = 6356752.3/1852
+    buf = new_c.Buffer(radius, quadseg)
 
-    a1 = a*a*math.cos(math.radians(center.GetX()))
-    b1 = b*b*math.sin(math.radians(center.GetX()))
-    ratn = a1**2 + b1**2
-    
-    a2 = a*math.cos(math.radians(center.GetX()))
-    b2 = b * math.sin(math.radian(center.GetX()))
-    ratd = a2**2 + b2**2
-    R = math.sqrt(ratn/ratd)
-    deg = degrees(math.atan(radius/R))
+    buf.AssignSpatialReference(ortho)
+    buf.TransformTo(latlong)
 
-    buf = center.Buffer(deg, quadseg)
     ring = buf.GetGeometryRef(0)
 
     return (buf,ring)
@@ -107,6 +139,8 @@ def createLineString():
     Creates an empty ogr.Geometry LineString.
     """
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbLineString)
+    bufp.AssignSpatialReference(latlong)
+
     return bufp
 
 def createPoint(n,e):
@@ -116,6 +150,8 @@ def createPoint(n,e):
     """
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
     bufp.AddPoint(n,e)
+    bufp.AssignSpatialReference(latlong)
+
     return bufp
 
 def getArc(ls, startPoint, endPoint):

@@ -43,24 +43,23 @@ shp = driver.CreateDataSource(shapePath)
 # beware that some method rely on this system and won't work
 # correctly if using a different system.
 # These method should be ported to be projection agnostic.
-spatialReference = airspace.util.getSpatialReferenceFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+# spatialReference = airspace.util.getSpatialReferenceFromProj4('+proj=longlat')
+## +ellps=WGS84 +datum=WGS84 +no_defs')
 
-layer = shp.CreateLayer('layer1', spatialReference, osgeo.ogr.wkbPolygon)
-layerDefinition = layer.GetLayerDefn()
+layer = shp.CreateLayer('layer1', geom_type=osgeo.ogr.wkbPolygon)
 
-i=0
+
 for zone in p.zones:
     try:
         poly = zone.finish()
-        feature = osgeo.ogr.Feature(layerDefinition)
-        feature.SetGeometry(poly)
-        feature.SetFID(i)
+        feature = osgeo.ogr.Feature(layer.GetLayerDefn())
+        feature.SetGeometryDirectly(poly)
 
-        i+=1
         layer.CreateFeature(feature)
+        feature.Destroy()
     except Exception,e:
-        print "[DROPPED] zone (probably because it contains an arc/circle)", zone.name
+        print "[DROPPED] zone", zone.name
         print e
 
-# don't forget to destroy the shape object (this will purge content to file)x
+# don't forget to destroy the shape object (this will purge content to file)
 shp.Destroy()

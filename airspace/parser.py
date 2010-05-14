@@ -159,42 +159,39 @@ class OAIRParser:
 
         p1 = util.createPoint(n1, e1)
         p2 = util.createPoint(n2, e2)
+        
+        radius = self.current_zone.current_center.Distance(p1)
+        new_radius = util.flatDistance(self.current_zone.current_center, p1)
 
-        (buf,ring) = util.getCircle(self.current_zone.current_center, p1)
+        (buf,ring) = util.getCircleByRadius(self.current_zone.current_center, new_radius)
+        # (buf,ring) = util.getCircle(self.current_zone.current_center, p1)
 
         si,ei = util.getArc(ring, p1, p2)
-        print "Count:", ring.GetPointCount()
 
         if si > ei:
             if self.current_zone.direction == "cw":
                 for i in xrange(si,ei+1,-1):
                     x,y,z = ring.GetPoint(i)
-                    print "add [solo] [%d] %f,%f" %(i,y,x)
                     self.current_zone.addPoint(y,x)
             else:
                 for i in xrange(si, ring.GetPointCount()):
                     x,y,z = ring.GetPoint(i)
                     self.current_zone.addPoint(y,x)
-                    print "add [p1] [%d] %f,%f" %(i,y,x)
                 for i in xrange(0, ei):
                     x,y,z = ring.GetPoint(i)
                     self.current_zone.addPoint(y,x)
-                    print "add [p2] [%d] %f,%f" %(i,y,x)
                 
         else: # si <= ei
             if self.current_zone.direction == "cw":
                 for i in xrange(si,-1,-1):
                     x,y,z = ring.GetPoint(i)
                     self.current_zone.addPoint(y,x)
-                    print "add [p1] [%d] %f,%f" %(i,y,x)
                 for i in xrange(ring.GetPointCount()-1, ei, -1):
                     x,y,z = ring.GetPoint(i)
                     self.current_zone.addPoint(y,x)
-                    print "add [p2] [%d] %f,%f" %(i,y,x)
             else:
                 for i in xrange(si, se+1):
                     x,y,z = ring.GetPoint(i)
-                    print "add [solo] [%d] %f,%f" %(i,y,x)
                     self.current_zone.addPoint(y,x)
                 
     def circle_action(self, line, m):
@@ -203,11 +200,11 @@ class OAIRParser:
         Triggered when a 'DC ...' line is matched
         """
         rad = float(m.group('radius'))
-        (buf, ring) = util.getCircleByRadius(self.current_zone.current_center, rad)
-
-        for i in xrange(ring.GetPointCount()):
-            x,y,z = ring.GetPoint(i)
-            self.current_zone.addPoint(y,x)
+        (buf, ring) = util.getCircleByRadius(self.current_zone.current_center, rad*1852)
+        self.current_zone.poly = buf
+        # for i in xrange(ring.GetPointCount()):
+        #     x,y,z = ring.GetPoint(i)
+        #     self.current_zone.addPoint(y,x)
 
     def poly_point_action(self, line, m):
         """

@@ -18,6 +18,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import osgeo.ogr
+import util
 
 class Zone:
     """
@@ -48,6 +49,8 @@ class Zone:
         self.current_center = None
         self.direction = "cw"
 
+        self.finish_need_to_close_ring = False
+        self.poly = None
         self.ring = None
         
     def addPoint(self, x, y):
@@ -56,15 +59,20 @@ class Zone:
         """
         if self.ring == None:
             self.ring = osgeo.ogr.Geometry(osgeo.ogr.wkbLinearRing)
+
+        self.finish_need_to_close_ring = True
+
         self.ring.AddPoint(x,y)
 
     def finish(self):
         """
         Closes the zone and returns the polygon
         """
-        self.ring.CloseRings()
-        poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
-        poly.AddGeometry(self.ring)
-        print "finished,", self.ring.GetPointCount()
+        if self.finish_need_to_close_ring:
+            self.ring.CloseRings()
+            self.poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
+            self.poly.AddGeometry(self.ring)
+            self.poly.AssignSpatialReference(util.latlong)
+            print "finished,", self.ring.GetPointCount()
 
-        return poly
+        return self.poly
