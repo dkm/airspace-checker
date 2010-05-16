@@ -33,9 +33,7 @@ latlong.ImportFromProj4('+proj=latlong')
 
 def getCircle(center, point, quadseg=90):
     """
-    Returns a tuple with the polygon buffer and the inner ring.
-    Beware that garbage collecting the buffer will garbage collect
-    the ring (within the C code, this means segfault)
+    Returns a polygon buffer with an inner ring representing the circle.
     The buffer uses 'quadseg' segments for each quarter circle.
     The circle is defined by a 'center' point and another 'point'
     """
@@ -61,13 +59,9 @@ def getCircle(center, point, quadseg=90):
 
 def getCircleByRadius(center, radius, quadseg=90):
     """
-    Returns a tuple with the polygon buffer and the inner ring.
-    Beware that garbage collecting the buffer will garbage collect
-    the ring (within the C code, this means segfault)
+    Returns a polygon buffer with an inner ring representing the circle.
     The buffer uses 'quadseg' segments for each quarter circle.
     The circle is defined by a 'center' point its radius in nm (nautic mile)
-    Beware that this method applies only to WGS84 data as there is a need for
-    projection when computing the real radius.
     """
     new_c = createPoint(longitude=center.GetX(), latitude=center.GetY())
     new_c.AssignSpatialReference(latlong)
@@ -115,8 +109,8 @@ def findNearestIndexInLineString(ls, point):
 
 def createPoint(longitude, latitude):
     """
-    Creates an ogr.Geometry Point from the longitude 'n' and
-    latitude 'e'.
+    Creates an ogr.Geometry Point from the longitude and
+    latitude.
     """
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
     bufp.AddPoint(longitude, latitude)
@@ -125,6 +119,11 @@ def createPoint(longitude, latitude):
     return bufp
 
 def pointsOnArc(linestring, startpoint, endpoint, direction="ccw"):
+    """
+    Returns a list of tuple (x,y,z) of point along the arc 'linestring',
+    between the 'startpoint' and 'endpoint'. The 'direction' parameters gives
+    the rotation direction: 'cw' for clockwise, 'ccw' for counter-clockwise.
+    """
     si,ei = getArcIndex(linestring, startpoint, endpoint)
     points = []
 
@@ -168,7 +167,10 @@ def getArcIndex(ls, startPoint, endPoint):
     return (si, ei)
 
 def latlonStr_to_deg(lat, latdir, lon, londir):
-            
+    """
+    Converts various lat/lon string coordinates representation
+    to degrees representation.
+    """
     lats = [float(x) for x in lat.split(':')]
     lons = [float(x) for x in lon.split(':')]
 
@@ -208,16 +210,6 @@ def latlon_to_deg(m, i=None):
         
     
     return latlonStr_to_deg(lat, latdir, lon, londir)
-
-def getSpatialReferenceFromProj4(spatialReferenceAsProj4):
-    """
-    Return a new osgeo.osr.SpatialReference object, initialized
-    with the projection defined in 'spatialReferenceAsProj4'.
-    """
-    spatialReference = osgeo.osr.SpatialReference()
-    spatialReference.ImportFromProj4(spatialReferenceAsProj4)
-    return spatialReference
-
 
 def writeGeometriesToShapeFile(geometries, shapefile):
     """

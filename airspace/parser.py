@@ -107,6 +107,12 @@ class OAIRParser:
                                set_width: self.set_width_action,
                                airway : self.airway_action}
 
+    # beware that the code makes the asumption that
+    # a name field always folows a class field:
+    # example:
+    # AC ....
+    # AN ....
+
     def aname_action(self, line, m):
         """
         Creates a new Zone object.
