@@ -19,6 +19,7 @@
 
 import osgeo.ogr
 import util
+import traceback
 
 class ZoneException(Exception):
     pass
@@ -52,10 +53,6 @@ class Zone:
         self.current_center = None
         self.direction = "cw"
 
-        self.poly = None
-
-        
-
     def finish(self):
         raise ZoneException()
 
@@ -67,30 +64,25 @@ class PolyZone(Zone):
         self.floor = zone.floor
         self.current_center = zone.current_center
         self.direction = zone.direction
-        self.poly = zone.poly
 
+        self.poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
         self.ring = None
 
-    def addPoint(self, x, y):
+    def addPoint(self, x, y, z=0):
         """
         Adds a point to the polygon describing the zone
         """
         if self.ring == None:
             self.ring = osgeo.ogr.Geometry(osgeo.ogr.wkbLinearRing)
 
-        self.finish_need_to_close_ring = True
-
-        self.ring.AddPoint(x,y)
+        self.ring.AddPoint(x,y,z)
 
     def finish(self):
         """
         Closes the zone and returns the polygon
         """
-
         self.ring.CloseRings()
-        self.poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
         self.poly.AddGeometry(self.ring)
-        self.poly.AssignSpatialReference(util.latlong)
 
         return self.poly
 
@@ -103,7 +95,7 @@ class CircleZone(Zone):
         self.floor = zone.floor
         self.current_center = zone.current_center
         self.direction = zone.direction
-        self.poly = zone.poly
+        self.poly = None
 
     def finish(self):
         return self.poly

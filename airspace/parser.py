@@ -112,7 +112,7 @@ class OAIRParser:
         Creates a new Zone object.
         Triggered when a 'AN ...' line is matched
         """
-        self.current_zone = zone.Zone(name=m.group('name'))
+        self.current_zone.name = m.group('name')
 
     def aclass_action(self, line, m):
         """
@@ -157,45 +157,19 @@ class OAIRParser:
         if (self.current_zone.__class__.__name__ == "Zone"):
             self.current_zone = zone.PolyZone(self.current_zone)
 
-        (n1, e1) = util.latlon_to_deg(m, 1)
-        (n2, e2) = util.latlon_to_deg(m, 2)
+        (lat1, lon1) = util.latlon_to_deg(m, 1)
+        (lat2, lon2) = util.latlon_to_deg(m, 2)
 
-        p1 = util.createPoint(n1, e1)
-        p2 = util.createPoint(n2, e2)
+        p1 = util.createPoint(latitude=lat1, longitude=lon1)
+        p2 = util.createPoint(latitude=lat2, longitude=lon2)
         
-        # radius = self.current_zone.current_center.Distance(p1)
-        # new_radius = util.flatDistance(self.current_zone.current_center, p1)
-        # print radius, new_radius
-        #(buf,ring) = util.getCircleByRadius(self.current_zone.current_center, new_radius)
-        (buf,ring) = util.getCircle(self.current_zone.current_center, p1)
+        buf = util.getCircle(self.current_zone.current_center, p1)
+        arcpoints = util.pointsOnArc(buf.GetGeometryRef(0), p1, p2, 
+                                     direction="cw")
 
-        si,ei = util.getArc(ring, p1, p2)
+        for arcpoint in arcpoints:
+            self.current_zone.addPoint(arcpoint[0], arcpoint[1], arcpoint[2])
 
-        if si > ei:
-            if self.current_zone.direction == "cw":
-                for i in xrange(si,ei+1,-1):
-                    x,y,z = ring.GetPoint(i)
-                    self.current_zone.addPoint(y,x)
-            else:
-                for i in xrange(si, ring.GetPointCount()):
-                    x,y,z = ring.GetPoint(i)
-                    self.current_zone.addPoint(y,x)
-                for i in xrange(0, ei):
-                    x,y,z = ring.GetPoint(i)
-                    self.current_zone.addPoint(y,x)
-                
-        else: # si <= ei
-            if self.current_zone.direction == "cw":
-                for i in xrange(si,-1,-1):
-                    x,y,z = ring.GetPoint(i)
-                    self.current_zone.addPoint(y,x)
-                for i in xrange(ring.GetPointCount()-1, ei, -1):
-                    x,y,z = ring.GetPoint(i)
-                    self.current_zone.addPoint(y,x)
-            else:
-                for i in xrange(si, se+1):
-                    x,y,z = ring.GetPoint(i)
-                    self.current_zone.addPoint(y,x)
                 
     def circle_action(self, line, m):
         """
@@ -203,24 +177,21 @@ class OAIRParser:
         Triggered when a 'DC ...' line is matched
         """
         rad = float(m.group('radius'))
-        (buf, ring) = util.getCircleByRadius(self.current_zone.current_center, rad*1852)
+        buf = util.getCircleByRadius(self.current_zone.current_center, rad*1852)
         if (self.current_zone.__class__.__name__ == "Zone"):
             self.current_zone = zone.CircleZone(self.current_zone)
         self.current_zone.poly = buf
-        # for i in xrange(ring.GetPointCount()):
-        #     x,y,z = ring.GetPoint(i)
-        #     self.current_zone.addPoint(y,x)
 
     def poly_point_action(self, line, m):
         """
         Adds a point to the polygon for the zone being parsed.
         Triggered when a 'DP ...' line is matched
         """
-        (n,e) = util.latlon_to_deg(m)
+        (lat, lon) = util.latlon_to_deg(m)
         if (self.current_zone.__class__.__name__ == "Zone"):
             self.current_zone = zone.PolyZone(self.current_zone)
 
-        self.current_zone.addPoint(e,n)
+        self.current_zone.addPoint(lon, lat)
 
     def set_direction_action(self, line, m):
         """
@@ -239,8 +210,9 @@ class OAIRParser:
         Triggered when a 'V X= ...' line is matched
         """
 
-        n,e = util.latlon_to_deg(m)
-        self.current_zone.current_center = util.createPoint(n,e)
+        lat, lon = util.latlon_to_deg(m)
+
+        self.current_zone.current_center = util.createPoint(longitude=lon, latitude=lat)
 
     def set_zoom_action(self, line, m):
         """

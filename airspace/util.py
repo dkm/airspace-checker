@@ -30,21 +30,6 @@ latlong = osgeo.osr.SpatialReference()
 ortho = osgeo.osr.SpatialReference()
 latlong.ImportFromProj4('+proj=latlong')
 
-def flatDistance(p1,p2):
-   
-    new_p1 = createPoint(p1.GetY(), p1.GetX())
-    new_p1.AssignSpatialReference(latlong)
-    proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (p1.GetY(), p1.GetX())
-    ortho.ImportFromProj4(proj)
-    new_p1.TransformTo(ortho)
-
-    new_p2 = createPoint(p2.GetY(), p2.GetX())
-    new_p2.AssignSpatialReference(latlong)
-    new_p2.TransformTo(ortho)
-  
-    dist = new_p1.Distance(new_p2)
-
-    return dist
 
 def getCircle(center, point, quadseg=90):
     """
@@ -55,26 +40,24 @@ def getCircle(center, point, quadseg=90):
     The circle is defined by a 'center' point and another 'point'
     """
 
-    # new_c = createPoint(center.GetX(), center.GetY())
-    # new_c.AssignSpatialReference(latlong)
-    # proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetY(), center.GetX())
-    # ortho.ImportFromProj4(proj)
-    # new_c.TransformTo(ortho)
+    new_c = createPoint(longitude=center.GetX(), latitude=center.GetY())
+    new_c.AssignSpatialReference(latlong)
+    proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetX(), center.GetY())
+    ortho.ImportFromProj4(proj)
+    new_c.TransformTo(ortho)
 
-    # new_p = createPoint(point.GetX(), point.GetY())
-    # new_p.AssignSpatialReference(latlong)
-    # new_p.TransformTo(ortho)
+    new_p = createPoint(longitude=point.GetX(), latitude=point.GetY())
+    new_p.AssignSpatialReference(latlong)
+    new_p.TransformTo(ortho)
 
-    dist = center.Distance(point)
+    dist = new_c.Distance(new_p)
+    
+    buf = new_c.Buffer(dist, quadseg)
 
-    buf = center.Buffer(dist, quadseg)
+    buf.AssignSpatialReference(ortho)
+    buf.TransformTo(latlong)
 
-    # buf.AssignSpatialReference(ortho)
-    # buf.TransformTo(latlong)
-
-    ring = buf.GetGeometryRef(0)
-
-    return (buf,ring)
+    return buf
 
 def getCircleByRadius(center, radius, quadseg=90):
     """
@@ -86,9 +69,9 @@ def getCircleByRadius(center, radius, quadseg=90):
     Beware that this method applies only to WGS84 data as there is a need for
     projection when computing the real radius.
     """
-    new_c = createPoint(center.GetX(), center.GetY())
+    new_c = createPoint(longitude=center.GetX(), latitude=center.GetY())
     new_c.AssignSpatialReference(latlong)
-    proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetY(), center.GetX())
+    proj = '+proj=ortho +lon_0=%f +lat_0=%f' % (center.GetX(), center.GetY())
     ortho.ImportFromProj4(proj)
     new_c.TransformTo(ortho)
 
@@ -97,9 +80,7 @@ def getCircleByRadius(center, radius, quadseg=90):
     buf.AssignSpatialReference(ortho)
     buf.TransformTo(latlong)
 
-    ring = buf.GetGeometryRef(0)
-
-    return (buf,ring)
+    return buf
     
 
 def distOgrPTupleP(ogrgeom, tuplep):
@@ -132,27 +113,51 @@ def findNearestIndexInLineString(ls, point):
 
     return (mi,md)
 
-def createLineString():
-    """
-    Creates an empty ogr.Geometry LineString.
-    """
-    bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbLineString)
-    bufp.AssignSpatialReference(latlong)
-
-    return bufp
-
-def createPoint(n,e):
+def createPoint(longitude, latitude):
     """
     Creates an ogr.Geometry Point from the longitude 'n' and
     latitude 'e'.
     """
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
-    bufp.AddPoint(n,e)
+    bufp.AddPoint(longitude, latitude)
     bufp.AssignSpatialReference(latlong)
 
     return bufp
 
-def getArc(ls, startPoint, endPoint):
+def pointsOnArc(linestring, startpoint, endpoint, direction="ccw"):
+    si,ei = getArcIndex(linestring, startpoint, endpoint)
+    points = []
+
+    if si > ei:
+        if direction == "ccw":
+            for i in xrange(si,ei+1,-1):
+                x,y,z = linestring.GetPoint(i)
+                points.append((x,y,z))
+        else:
+            for i in xrange(si, linestring.GetPointCount()):
+                x,y,z = linestring.GetPoint(i)
+                points.append((x,y,z))
+
+            for i in xrange(0, ei):
+                x,y,z = linestring.GetPoint(i)
+                points.append((x,y,z))
+                
+    else: # si <= ei
+        if direction == "ccw":
+            for i in xrange(si,-1,-1):
+                x,y,z = linestring.GetPoint(i)
+                points.append((x,y,z))
+            for i in xrange(linestring.GetPointCount()-1, ei, -1):
+                x,y,z = linestring.GetPoint(i)
+                points.append((x,y,z))
+        else:
+            for i in xrange(si, ei+1):
+                x,y,z = linestring.GetPoint(i)
+                points.append((x,y,z))
+  
+    return points
+
+def getArcIndex(ls, startPoint, endPoint):
     """
     Given a LineString 'ls', a start point 'startPoint' and an end pont 'endPoint',
     returns a tuple with the index of the points in 'ls' that are the
@@ -162,24 +167,8 @@ def getArc(ls, startPoint, endPoint):
     ei,ed = findNearestIndexInLineString(ls, endPoint)
     return (si, ei)
 
-def latlon_to_deg(m, i=None):
-    """
-    Converts a match object for the coord regular expression
-    to a tuple (latitude, longitude)
-    If the match object contains multiple coordinates matches,
-    give the index with 'i'
-    """
-    if i == None:
-        lat = m.group('lat')
-        lon = m.group('lon')
-        latdir = m.group('d1')
-        londir = m.group('d2')
-    else:
-        lat = m.group('lat%d' % i)
-        lon = m.group('lon%d' % i)
-        latdir = m.group('d1%d' % i)
-        londir = m.group('d2%d' % i)
-        
+def latlonStr_to_deg(lat, latdir, lon, londir):
+            
     lats = [float(x) for x in lat.split(':')]
     lons = [float(x) for x in lon.split(':')]
 
@@ -199,6 +188,27 @@ def latlon_to_deg(m, i=None):
 
     return (lat_deg, lon_deg)
 
+def latlon_to_deg(m, i=None):
+    """
+    Converts a match object for the coord regular expression
+    to a tuple (latitude, longitude)
+    If the match object contains multiple coordinates matches,
+    give the index with 'i'
+    """
+    if i == None:
+        lat = m.group('lat')
+        lon = m.group('lon')
+        latdir = m.group('d1')
+        londir = m.group('d2')
+    else:
+        lat = m.group('lat%d' % i)
+        lon = m.group('lon%d' % i)
+        latdir = m.group('d1%d' % i)
+        londir = m.group('d2%d' % i)
+        
+    
+    return latlonStr_to_deg(lat, latdir, lon, londir)
+
 def getSpatialReferenceFromProj4(spatialReferenceAsProj4):
     """
     Return a new osgeo.osr.SpatialReference object, initialized
@@ -208,8 +218,21 @@ def getSpatialReferenceFromProj4(spatialReferenceAsProj4):
     spatialReference.ImportFromProj4(spatialReferenceAsProj4)
     return spatialReference
 
-def validateShapePath(shapePath):
+
+def writeGeometriesToShapeFile(geometries, shapefile):
     """
-    Checks path 'shapePath' to the shape file.
+    Writes a set of OGRGeometry object to a shapefile (.shp)
     """
-    return os.path.splitext(str(shapePath))[0] + '.shp'
+
+    driver = osgeo.ogr.GetDriverByName('ESRI Shapefile')
+    if os.path.exists(shapefile): os.remove(shapefile)
+    shp = driver.CreateDataSource(shapefile)
+
+    layer = shp.CreateLayer('defaultlayer', geom_type=osgeo.ogr.wkbPolygon)
+    for geom in geometries:
+        feature = osgeo.ogr.Feature(layer.GetLayerDefn())
+        feature.SetGeometryDirectly(geom)
+        layer.CreateFeature(feature)
+        feature.Destroy()
+    shp.Destroy()
+
