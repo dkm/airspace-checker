@@ -42,7 +42,7 @@ def loadGpx(gpxname):
             ele = m.group('elevation')
             cur_coord.append(ele)
 
-            ls.AddPoint(float(cur_coord[0]), 
-                        float(cur_coord[1]),
+            ls.AddPoint(float(cur_coord[1]), 
+                        float(cur_coord[0]),
                         float(ele))
     return ls
