@@ -28,22 +28,28 @@ import airspace.util
 import airspace.track
 
 p = airspace.parser.OAIRParser(sys.argv[1])
-
+print "Parsing..."
 p.parse()
+print "[OK] %d zones" %len(p.zones)
 
-gpxtrack = airspace.track.loadGpx('test.gpx')
+track = airspace.track.loadSimpleTxt('toto.txt')
 
-print gpxtrack.GetPointCount()
+print track.GetPointCount()
 
 found_an_intersection = 0
 
+intersected_segs = []
+
 for zone in p.zones:
     poly = zone.finish()
-    if poly.Intersect(gpxtrack):
+    if poly.Intersect(track):
         found_an_intersection += 1
-        print "Intersection of ", zone.name
+        print "Intersection with", zone.name
+        intersected_segs += airspace.util.getSubLineStringInZone(track,poly)
 
 if found_an_intersection > 0:
     print "Found %d intersections." % found_an_intersection
 else:
     print "No intersection found."
+
+airspace.util.writeGeometriesToShapeFile(intersected_segs, "test.shp")
