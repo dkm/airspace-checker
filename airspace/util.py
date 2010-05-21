@@ -107,13 +107,13 @@ def findNearestIndexInLineString(ls, point):
 
     return (mi,md)
 
-def createPoint(longitude, latitude):
+def createPoint(longitude, latitude, altitude=0):
     """
     Creates an ogr.Geometry Point from the longitude and
     latitude.
     """
     bufp = osgeo.ogr.Geometry(osgeo.ogr.wkbPoint)
-    bufp.AddPoint(longitude, latitude)
+    bufp.AddPoint(longitude, latitude, altitude)
     bufp.AssignSpatialReference(latlong)
 
     return bufp
