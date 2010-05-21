@@ -241,7 +241,7 @@ def writeGeometriesToShapeFile(geometries, shapefile):
     if os.path.exists(shapefile): os.remove(shapefile)
     shp = driver.CreateDataSource(shapefile)
 
-    layer = shp.CreateLayer('defaultlayer', geom_type=osgeo.ogr.wkbPolygon)
+    layer = shp.CreateLayer('defaultlayer')
     for geom in geometries:
         feature = osgeo.ogr.Feature(layer.GetLayerDefn())
         feature.SetGeometryDirectly(geom)
