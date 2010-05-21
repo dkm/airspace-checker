@@ -19,6 +19,19 @@
 
 import re
 import util
+import osgeo.ogr
+
+def loadSimpleTxt(txtfile):
+    fin = open(txtfile, "r")
+    ls = osgeo.ogr.Geometry(osgeo.ogr.wkbLineString)
+
+    for line in fin.xreadlines():
+        lon,lat,alt = line.strip().split()
+        ls.AddPoint(float(lon), 
+                    float(lat),
+                    float(alt))
+    fin.close()
+    return ls
 
 def loadGpx(gpxname):
     """
@@ -27,7 +40,7 @@ def loadGpx(gpxname):
     in the GPX file. Very weak.
     """
     fin = open(gpxname, "r")
-    ls = util.createLineString()
+    ls = osgeo.ogr.Geometry(osgeo.ogr.wkbLineString)
     cur_point = None
 
     for line in fin.xreadlines():
