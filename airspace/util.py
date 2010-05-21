@@ -211,6 +211,27 @@ def latlon_to_deg(m, i=None):
     
     return latlonStr_to_deg(lat, latdir, lon, londir)
 
+def getSubLineStringInZone(linestring, zone):
+    linestrings = []
+
+    active = False 
+    ls = osgeo.ogr.Geometry(osgeo.ogr.wkbLineString)
+
+
+    for idx in xrange(linestring.GetPointCount()):
+        x,y,z = linestring.GetPoint(idx)
+        p = createPoint(x,y,z)
+        if zone.Contains(p):
+            ls.AddPoint(x,y,z)
+        else :
+            if active:
+                linestrings.append(ls)
+                ls = osgeo.ogr.Geometry(osgeo.ogr.wkbLineString)
+
+    if ls.GetPointCount() > 0:
+        linestrings.append(ls)
+    return linestrings
+
 def writeGeometriesToShapeFile(geometries, shapefile):
     """
     Writes a set of OGRGeometry object to a shapefile (.shp)
