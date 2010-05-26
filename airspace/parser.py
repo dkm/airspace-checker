@@ -41,7 +41,7 @@ import zone
 aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$')
 
 coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
-alti = '(?P<height>\d+F )?((?P<ref>AGL|AMSL|FL|SFC|UNL)|(?P<fl>FL\d+))$'
+alti = '(((?P<height>\d+)F )?(?P<ref>AGL|AMSL|SFC|UNL))|(FL(?P<fl>\d+))$'
 
 aceil = re.compile('^AH ' + alti)
 afloor = re.compile('^AL ' + alti)
