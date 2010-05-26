@@ -1,0 +1,18 @@
+- [(subtrack, region)] = slice track by intersecting regions
+- for each (subtrack,region):
+  - for each point of subtrack:
+    - check point.alt <= region.flood@point or point.alt >= region.ceil@point
+
+getCeilAltAtPoint(region, point):
+  if region.ref == absolute
+     return region.ceil
+  elif region.ref == relative:
+     gb = resolvegetGroundHeight(point)
+     return region.ceil + gb
+
+getGroundHeight(self, point)#SQL:
+  return int(self.query("SELECT ground_base AT ...."))
+
+getGroundHeight(self, point)#CONNECTED:
+  return int(do_get_req("http://......?lon=%d&lat=%d" 
+                        %(point.y, point.x))
