@@ -41,6 +41,15 @@ import zone
 aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$')
 
 coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
+
+#
+# F : Feet.
+# AGL : Above Ground Level
+# AMSL: Above Mean Sea Level
+# SFC: Surface
+# UNL: Unlimited height
+# FL: Flight Level (x100 = Feets)
+
 alti = '(((?P<height>\d+)F )?(?P<ref>AGL|AMSL|SFC|UNL))|(FL(?P<fl>\d+))$'
 
 aceil = re.compile('^AH ' + alti)
@@ -136,11 +145,14 @@ class OAIRParser:
         Triggered when a 'AH ...' line is matched
         """
         if m.group('height'):
-            self.current_zone.ceil = " ".join((m.group('height'), m.group('ref')))
+            self.current_zone.ceil = int(m.group('height'))
+            self.current_zone.ceil_ref = m.group('ref')
         elif m.group('fl'):
-            self.current_zone.ceil = m.group('ref')
+            self.current_zone.ceil = m.group('fl')
+            self.current_zone.ceil_ref = "FL"
         else:
-            self.current_zone.ceil = m.group('ref')
+            self.current_zone.ceil = -1
+            self.current_zone.ceil_ref = m.group('ref')
 
     def afloor_action(self, line, m):
         """
@@ -149,11 +161,14 @@ class OAIRParser:
         """
 
         if m.group('height'):
-            self.current_zone.floor = " ".join((m.group('height'), m.group('ref')))
+            self.current_zone.floor = int(m.group('height'))
+            self.current_zone.floor_ref = m.group('ref')
         elif m.group('fl'):
-            self.current_zone.floor = m.group('ref')
+            self.current_zone.floor = m.group('fl')
+            self.current_zone.floor_ref = "FL"
         else:
-            self.current_zone.floor = m.group('ref')
+            self.current_zone.floor = -1
+            self.current_zone.floor_ref = m.group('ref')
 
     def arc_coord_action(self, line, m):
         """

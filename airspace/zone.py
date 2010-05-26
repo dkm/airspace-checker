@@ -29,29 +29,81 @@ class Zone:
     Describe a zone
     """
     
+
+    """
+    The ceiling of the zone
+    """
+    ceil = None
+    ceil_ref = None
+    
+    """
+    The floor of the zone
+    """
+    floor = None
+    floor_ref = None
+    
+    """
+    The class of the zone
+    """
+    aclass = None
+    
+    current_center = None
+    direction = "cw"
+    
+    altitude_resolver = altiresolver.GeoNamesResolver(datasource="gtopo30")
+
     def __init__(self, name=None, aclass=None):
         """
         The name of the Zone
         """
         self.name = name
 
-        """
-        The ceiling of the zone
-        """
-        self.ceil = None
-
-        """
-        The floor of the zone
-        """
-        self.floor = None
-
-        """
-        The class of the zone
-        """
-        self.aclass = None
-
         self.current_center = None
         self.direction = "cw"
+
+    def getCeilAtPoint(self, lat, lon):
+        if self.ceil_ref == "FL":
+            return self.ceil * 100
+        elif self.ceil_ref == "SFC":
+            # not 100% true, as SFC is not at 0 MSL.
+            # approx valid when flying outside of a cave.
+            #
+            # /!\ does not really make sense to use SFC for the ceiling...
+            return 0
+        elif self.ceil_ref == "UNL":
+            return sys.maxint
+        elif self.ceil_ref == "AMSL":
+            return self.ceil
+        elif self.ceil_ref == "AGL":
+            ground_level = self.altitude_resolver.getGroundLevelAt(lat,lon)
+            return self.ceil + ground_level
+
+    def getFloorAtPoint(self, lat, lon):
+        if self.floor_ref == "FL":
+            return self.floor * 100
+        elif self.floor_ref == "SFC":
+            # not 100% true, as SFC is not at 0 MSL.
+            # approx valid when flying outside of a cave.
+            return 0
+        elif self.floor_ref == "UNL":
+            # does not make sense to use UNL as floor.
+            return sys.maxint
+        elif self.floor_ref == "AMSL":
+            return self.floor
+        elif self.floor_ref == "AGL":
+            ground_level = self.altitude_resolver.getGroundLevelAt(lat,lon)
+            return self.floor + ground_level
+
+
+    def duplicate(self, otherzone):
+        self.ceil = zone.ceil
+        self.ceil_ref = zone.ceil_ref
+
+        self.floor = zone.floor
+        self.floor_ref = zone.floor_ref
+
+        self.current_center = zone.current_center
+        self.direction = zone.direction
 
     def finish(self):
         raise ZoneException()
@@ -60,10 +112,7 @@ class PolyZone(Zone):
 
     def __init__(self, zone):
         Zone.__init__(self, zone.name, zone.aclass)
-        self.ceil = zone.ceil
-        self.floor = zone.floor
-        self.current_center = zone.current_center
-        self.direction = zone.direction
+        self.duplicate(zone)
 
         self.poly = osgeo.ogr.Geometry(osgeo.ogr.wkbPolygon)
         self.ring = None
@@ -91,10 +140,7 @@ class CircleZone(Zone):
 
     def __init__(self, zone):
         Zone.__init__(self, zone.name, zone.aclass)
-        self.ceil = zone.ceil
-        self.floor = zone.floor
-        self.current_center = zone.current_center
-        self.direction = zone.direction
+        self.duplicate(zone)
         self.poly = None
 
     def finish(self):
