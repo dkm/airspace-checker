@@ -18,23 +18,43 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import urllib2
+import error
 
 class AltiResolver:
     def getGroundLevelAt(self, lat, lon):
         pass
 
+VALID_GN_SRC=("gtopo30", "astergdem")
+
 class GeoNamesResolver(AltiResolver):
-    def __init__(self, datasource="gtopo30"):
+    def __init__(self, datasource="astergdem", debug=False, unit="foot"):
         """
         Valid values for datasource are:
          * gtopo30
          * astergdem : uses gdem data (should be 1° precise, ~30m)
         """
+        if datasource not in VALID_GN_SRC:
+            raise error.ASCException()
+
+        self.unit = unit
+        self.debug = debug
         self.datasource = datasource
 
-    def getGroundLevelAt(self, lat, lon):
-        url = "http://ws.geonames.org/%s?lat=%f&lng=%f" % (self.datasource,
+    def sendRequestForGroundLevel(self, datasource, lat, lon):
+        url = "http://ws.geonames.org/%s?lat=%f&lng=%f" % (datasource,
                                                            lat, lon)
         # this is very basic as a check that it is ok.
         # if the http get fails, we should not get a valid float : error raised
-        return float(urllib2.urlopen(url).read().strip())
+        val_meters = float(urllib2.urlopen(url).read().strip())
+        if self.unit == "foot":
+            val = float(val_meters / 0.30480)
+        else:
+            val = float(val_meters)
+        return val
+        
+    def getGroundLevelAt(self, lat, lon):
+        ret = self.sendRequestForGroundLevel(self.datasource, lat, lon)
+        if self.debug:
+            for ds in VALID_GN_SRC:
+                print "[%s]=" %ds, self.sendRequestForGroundLevel(ds, lat, lon)
+        return ret
