@@ -25,6 +25,11 @@ class AltiResolver:
 
 class GeoNamesResolver(AltiResolver):
     def __init__(self, datasource="gtopo30"):
+        """
+        Valid values for datasource are:
+         * gtopo30
+         * astergdem : uses gdem data (should be 1° precise, ~30m)
+        """
         self.datasource = datasource
 
     def getGroundLevelAt(self, lat, lon):
