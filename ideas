@@ -1,7 +1,7 @@
 - [(subtrack, region)] = slice track by intersecting regions
 - for each (subtrack,region):
   - for each point of subtrack:
-    - check point.alt <= region.flood@point or point.alt >= region.ceil@point
+    - check point.alt <= region.floor@point or point.alt >= region.ceil@point
 
 getCeilAltAtPoint(region, point):
   if region.ref == absolute
