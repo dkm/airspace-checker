@@ -21,6 +21,8 @@ import osgeo.ogr
 import util
 import traceback
 
+import altiresolver
+
 class ZoneException(Exception):
     pass
 
@@ -96,14 +98,14 @@ class Zone:
 
 
     def duplicate(self, otherzone):
-        self.ceil = zone.ceil
-        self.ceil_ref = zone.ceil_ref
+        self.ceil = otherzone.ceil
+        self.ceil_ref = otherzone.ceil_ref
 
-        self.floor = zone.floor
-        self.floor_ref = zone.floor_ref
+        self.floor = otherzone.floor
+        self.floor_ref = otherzone.floor_ref
 
-        self.current_center = zone.current_center
-        self.direction = zone.direction
+        self.current_center = otherzone.current_center
+        self.direction = otherzone.direction
 
     def finish(self):
         raise ZoneException()
