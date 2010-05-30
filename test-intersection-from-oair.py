@@ -45,31 +45,44 @@ for zone in p.zones:
     if poly.Intersect(track):
         found_an_intersection += 1
         print "Intersection with", zone.name
-        intersected_segs += (airspace.util.getSubLineStringInZone(track,poly), poly)
+        intersected_segs.append((airspace.util.getSubLineStringInZone(track,poly), zone))
 
 if found_an_intersection > 0:
     print "Found %d potential intersections." % found_an_intersection
-    true_positive_inters = []
-    false_positive_inters = []
+    true_positive_inters = {}
+    false_positive_inters = {}
 
-    for subtrack,interzone in intersected_segs:
+    print intersected_segs
+    for subtracks,interzone in intersected_segs:
         confirmed = False
-        for pt_idx in xrange(subtrack.GetPointCount()):
-            lon,lat,alt = subtrack.GetPoint(pt_idx)
-            ceil_alt = interzone.getCeilAtPoint(lat,lon)
-            floor_alt = interzone.getFloorAtPoint(lat,lon)
-            if alt > floor_alt and alt < ceil_alt:
-                confirmed = True
-                print "%f/%f@%f in zone '%s' (%f/%f)" % (lat,lon,alt,
-                                                         interzone.name,
-                                                         floor_alt, ceil_alt)
+        for subtrack in subtracks:
+            for pt_idx in xrange(subtrack.GetPointCount()):
+                lon,lat,alt = subtrack.GetPoint(pt_idx)
+                ceil_alt = interzone.getCeilAtPoint(lat,lon)
+                floor_alt = interzone.getFloorAtPoint(lat,lon)
+                if alt > floor_alt and alt < ceil_alt:
+                    confirmed = True
+                    print "%f/%f@%f in zone '%s' (%f< %f < %f)" % (lat,lon,alt,
+                                                                   interzone.name,
+                                                                   floor_alt, alt, ceil_alt)
         if confirmed:
-            true_positive_inters += (subtrack,interzone)
+            if interzone in true_positive_inters:
+                true_positive_inters[interzone].append(subtrack)
+            else:
+                d = [subtrack]
+                true_positive_inters[interzone] = d
         else:
-            false_positive_inters += (subtrack,interzone)
+            if interzone in false_positive_inters:
+                false_positive_inters[interzone].append(subtrack)
+            else:
+                d = [subtrack]
+                false_positive_inters[interzone] = d
 
     print "confirmed inter: %d" % len(true_positive_inters)
     print "false positive inter: %d" % len(false_positive_inters)
+
+    for zone,tracks in true_positive_inters.items():
+        print "inter with :", zone.name
 
 else:
     print "No intersection found."
