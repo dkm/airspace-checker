@@ -242,9 +242,15 @@ def writeGeometriesToShapeFile(geometries, shapefile):
     shp = driver.CreateDataSource(shapefile)
 
     layer = shp.CreateLayer('defaultlayer')
-    for geom in geometries:
+    field_defn = osgeo.ogr.FieldDefn( "Name", osgeo.ogr.OFTString )
+    field_defn.SetWidth( 32 )
+    layer.CreateField(field_defn)
+
+    for geom,name_field in geometries:
         feature = osgeo.ogr.Feature(layer.GetLayerDefn())
+        #feature.SetStyleString("BRUSH(fc:#0000FF);PEN(c:#000000)")
         feature.SetGeometryDirectly(geom)
+        feature.SetField("Name", name_field)
         layer.CreateFeature(feature)
         feature.Destroy()
     shp.Destroy()
