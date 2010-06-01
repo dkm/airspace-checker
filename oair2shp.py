@@ -30,6 +30,6 @@ p.parse()
 
 shapePath = sys.argv[2]
 
-geos = [g.finish() for g in p.zones]
+geos = [(g.finish(), "[%s]" % g.name) for g in p.zones]
 
 airspace.util.writeGeometriesToShapeFile(geos, shapePath)
