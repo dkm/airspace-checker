@@ -52,7 +52,8 @@ class Zone:
     current_center = None
     direction = "cw"
     
-    altitude_resolver = altiresolver.GeoNamesResolver(datasource="gtopo30")
+    altitude_resolver = altiresolver.OssimResolverProcess("/mnt/supra-fat/dkm/marble-srtm-data/unzipe/ossim_preferences_template")
+    #altiresolver.GeoNamesResolver(datasource="gtopo30")
 
     def __init__(self, name=None, aclass=None):
         """
