@@ -11,12 +11,54 @@
 
 // ripped from ossim-height
 // FIXME: add correct headers (licence & friends)
-static void f(void){
+static PyObject* 
+get_elevation(double lat, double lon){
+  ossimGpt gpt;
+  gpt.latd(lat);
+  gpt.lond(lon);
 
-  char *argv[] = {"ossim-height", "-h"};
+  ossim_float64 hgtAboveMsl       = ossimElevManager::instance()->
+    getHeightAboveMSL(gpt);
 
-		  //"-P", "/tmp/toto", "3.3", "3.3"};
-  int argc = sizeof(argv);
+  ossim_float64 hgtAboveEllipsoid = ossimElevManager::instance()->
+    getHeightAboveEllipsoid(gpt);
+
+  ossim_float64 geoidOffset       = ossimGeoidManager::instance()->
+    offsetFromEllipsoid(gpt);
+
+  ossim_float64 mslOffset       = 0.0;
+   
+  if(ossim::isnan(hgtAboveEllipsoid)||ossim::isnan(hgtAboveMsl)) {
+    mslOffset = ossim::nan();
+  } else {
+    mslOffset = hgtAboveEllipsoid - hgtAboveMsl;
+  }
+
+#if 1 /* Tmp until this functionality is added back. */
+  /* kept from original ossim code */
+  std::vector<ossimFilename> cellList;
+  ossimElevManager::instance()->getOpenCellList(cellList);
+#endif
+
+  if (ossim::isnan(hgtAboveEllipsoid) || ossim::isnan(hgtAboveMsl))
+    Py_RETURN_NONE;
+
+  PyObject *ret = Py_BuildValue("ff", hgtAboveMsl, hgtAboveEllipsoid);
+  return ret;
+}
+
+
+
+static PyObject *
+ossim_init(PyObject *self, PyObject *args)
+{
+  char *pref_file;
+
+  if (!PyArg_ParseTuple(args, "s", &pref_file))
+        return NULL;
+
+  char *argv[] = {"ossim-height", "-P", pref_file};
+  int argc = 3;
 
   ossimArgumentParser argumentParser(&argc, argv);
 
@@ -26,115 +68,36 @@ static void f(void){
 
   argumentParser.getApplicationUsage()->setApplicationName(
     argumentParser.getApplicationName());
-
-  argumentParser.getApplicationUsage()->setDescription(
-    argumentParser.getApplicationName()+
-      " Returns a MSL and ellipoid height given a lat lon position");
-
-  argumentParser.getApplicationUsage()->addCommandLineOption(
-    "-h or --help", "Shows help");
-
-  argumentParser.getApplicationUsage()->setCommandLineUsage(
-    argumentParser.getApplicationName()+
-    " <lat degrees> <lon degrees>");
-
-
-  if(argumentParser.read("-h") || argumentParser.read("--help")||
-     (argc != 3))
-    {
-      argumentParser.getApplicationUsage()->write(std::cout);
-      exit(0);
-    }
-   
-  if (argumentParser.errors())
-    {
-      argumentParser.writeErrorMessages(std::cout);
-      exit(1);
-    }
-
-  ossimGpt gpt;
-  gpt.latd(ossimString(argumentParser.argv()[1]).toDouble());
-  gpt.lond(ossimString(argumentParser.argv()[2]).toDouble());
-
-  ossim_float64 hgtAboveMsl       = ossimElevManager::instance()->
-    getHeightAboveMSL(gpt);
-  ossim_float64 hgtAboveEllipsoid = ossimElevManager::instance()->
-    getHeightAboveEllipsoid(gpt);
-  ossim_float64 geoidOffset       = ossimGeoidManager::instance()->offsetFromEllipsoid(gpt);
-  ossim_float64 mslOffset       = 0.0;
-   
-  if(ossim::isnan(hgtAboveEllipsoid)||ossim::isnan(hgtAboveMsl))
-    {
-      mslOffset = ossim::nan();
-    }
-  else
-    {
-      mslOffset = hgtAboveEllipsoid - hgtAboveMsl;
-    }
-#if 1 /* Tmp until this functionality is added back. */
-  std::vector<ossimFilename> cellList;
-  ossimElevManager::instance()->getOpenCellList(cellList);
-
-  if (!cellList.empty())
-    {
-      std::cout << "Opened cell:  " << cellList[0] << std::endl;
-    }
-  else
-    {
-      std::cout << "Did not find cell for point!" << std::endl;
-    }
-#endif
-   
-  std::cout << "MSL to ellipsoid delta:   ";
-  if (!ossim::isnan(mslOffset))
-    {
-      std::cout << std::setprecision(15) << mslOffset;
-    }
-  else
-    {
-      std::cout << "nan";
-    }
-  std::cout << "\nHeight above MSL:        ";
-  if (!ossim::isnan(hgtAboveMsl))
-    {
-      std::cout << std::setprecision(15) << hgtAboveMsl;
-    }
-  else
-    {
-      std::cout << "nan";
-    }
-  std::cout << "\nHeight above ellipsoid:  ";
-  if (!ossim::isnan(hgtAboveEllipsoid))
-    {
-      std::cout << std::setprecision(15) << hgtAboveEllipsoid << std::endl;
-    }
-  else
-    {
-      std::cout << "nan" << std::endl;
-    }
-  std::cout << "Geoid value:  ";
-  if (!ossim::isnan(geoidOffset))
-    {
-      std::cout << std::setprecision(15) << geoidOffset << std::endl;
-    }
-  else
-    {
-      std::cout << "nan" << std::endl;
-    }
+  
+  Py_RETURN_NONE;
 }
-
 
 static PyObject *
 ossim_height(PyObject *self, PyObject *args)
 {
-  f();
-  return Py_BuildValue("i", 0);
+  float lat,lon;
+  //  char lat_s[10], lon_s[10];
+
+  //  char *pref_file;
+
+  // memset(lat_s, 0, 10);
+  // memset(lon_s, 0, 10);
+
+  if (!PyArg_ParseTuple(args, "ff", &lat, &lon))
+        return NULL;
+
+  // snprintf(lat_s, 10, "%.6f", lat);
+  // snprintf(lon_s, 10, "%.6f", lon);
+  
+  return get_elevation(lat, lon);
 }
 
 
 static PyMethodDef OssimMethods[] = {
   {"height",  ossim_height, METH_VARARGS,
    "Give the height of a given point."},
+  {"init",  ossim_init, METH_VARARGS,
+   "Initialize the OSSIM library."},
   {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
