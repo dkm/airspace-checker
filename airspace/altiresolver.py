@@ -20,6 +20,7 @@
 import urllib2
 import error
 import subprocess
+import ossim
 
 class AltiResolver:
     def getGroundLevelAt(self, lat, lon):
@@ -40,6 +41,19 @@ class OssimResolverProcess(AltiResolver):
         for l in p.stdout.xreadlines():
             if l.startswith("Height above MSL:"):
                 return float(l.strip().split(':')[1].strip())
+
+
+class OssimResolverWrapper(AltiResolver):
+    def __init__(self, ossim_config):
+        self.config = ossim_config
+        ossim.init(self.config)
+
+    def getGroundLevelAt(self, lat, lon):
+        r = ossim.height(lat,lon)
+        if r:
+            return r[0]
+        else:
+            return None
 
 VALID_GN_SRC=("gtopo30", "astergdem")
 
