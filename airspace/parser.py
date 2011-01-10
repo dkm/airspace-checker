@@ -35,6 +35,8 @@ import os.path
 import sys
 import math
 
+from rtree import Rtree
+
 import util
 import zone
 
@@ -80,13 +82,25 @@ re_lines = [aclass,
             set_zoom,
             airway]
 
+class ZoneIndex:
+    def __init__(self):
+        self.list = []
+        idx = Rtree()
+        self.idx = 0
+
+    def append(self, zone):
+        self.idx.add(self.idx, zone.poly.GetEnvelope())
+        self.idx += 1
+        self.list.append(zone)
+
+
 class OAIRParser:
     """
     A OAIRParser object is used to parse an OpenAir formated
     text file into corresponding OGR objects.
     """
 
-    zones = []
+    zones = ZoneIndex()
     current_zone = None
 
     def __init__(self, fname):
@@ -117,7 +131,7 @@ class OAIRParser:
                                airway : self.airway_action}
 
     # beware that the code makes the asumption that
-    # a name field always folows a class field:
+    # a name field always follows a class field:
     # example:
     # AC ....
     # AN ....
