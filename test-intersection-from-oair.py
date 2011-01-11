@@ -40,7 +40,12 @@ found_an_intersection = 0
 
 intersected_segs = []
 
-for zone in p.zones:
+print "Track bbox: ", track.GetEnvelope()
+zones_to_check = p.zones.intersection(track.GetEnvelope())
+print "Potential crossed zones:", len(zones_to_check)
+
+for zone in zones_to_check:
+##for zone in p.zones.list:
     poly = zone.finish()
     if poly.Intersect(track):
         found_an_intersection += 1

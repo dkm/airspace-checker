@@ -133,8 +133,10 @@ class PolyZone(Zone):
         """
         Closes the zone and returns the polygon
         """
-        self.ring.CloseRings()
-        self.poly.AddGeometry(self.ring)
+        if self.ring :
+            self.ring.CloseRings()
+            self.poly.AddGeometry(self.ring)
+            self.ring = None
 
         return self.poly
 

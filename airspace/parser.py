@@ -85,14 +85,25 @@ re_lines = [aclass,
 class ZoneIndex:
     def __init__(self):
         self.list = []
-        idx = Rtree()
+        self.rtree_idx = Rtree()
         self.idx = 0
 
     def append(self, zone):
-        self.idx.add(self.idx, zone.poly.GetEnvelope())
+        zone.finish()
+        minLong,maxLong,minLat,maxLat =  zone.poly.GetEnvelope()
+        bbox = (minLong, minLat, maxLong, maxLat)
+##        print "bbox: ", bbox
+        self.rtree_idx.add(self.idx, bbox)
         self.idx += 1
         self.list.append(zone)
+    
+    def __len__(self):
+        return len(self.list)
 
+    def intersection(self, bbox):
+        minLong,maxLong,minLat,maxLat = bbox
+        n_bbox = (minLong, minLat, maxLong, maxLat)
+        return [self.list[i] for i in self.rtree_idx.intersection(n_bbox)]
 
 class OAIRParser:
     """
