@@ -28,6 +28,9 @@
 ##
 
 import re
+
+import shapely
+
 import osgeo.ogr
 import osgeo.osr
 import os
@@ -52,22 +55,22 @@ coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+
 # UNL: Unlimited height
 # FL: Flight Level (x100 = Feets)
 
-alti = '(((?P<height>\d+)F )?(?P<ref>AGL|AMSL|SFC|UNL))|(FL(?P<fl>\d+))$'
+alti = '(((?P<height>\d+)F )?(?P<ref>AGL|AMSL|SFC|UNL))|(FL(?P<fl>\d+))\s*$'
 
 aceil = re.compile('^AH ' + alti)
 afloor = re.compile('^AL ' + alti)
-aname = re.compile('^AN (?P<name>.*)$')
+aname = re.compile('^AN (?P<name>.*)\s*$')
 
-poly_point = re.compile('^DP ' + coords % ("","","","") + '$')
-circle = re.compile('^DC (?P<radius>\d+(\.\d+)?)$')
+poly_point = re.compile('^DP ' + coords % ("","","","") + '\s*$')
+circle = re.compile('^DC (?P<radius>\d+(\.\d+)?)\s*$')
 
-arc_coord = re.compile('^DB ' + coords % ("1","1","1","1") +','+ coords  % ("2","2","2","2") + '$')
-set_direction = re.compile('^V D=(?P<direction>\+|-)$')
-set_center = re.compile('^V X=' + coords % ("","","","") + '$')
-set_width = re.compile('^V W=(?P<width>\d+\.\d+)$')
-set_zoom = re.compile('^V Z=(?P<zoom>\d+\.\d+)$')
+arc_coord = re.compile('^DB ' + coords % ("1","1","1","1") +','+ coords  % ("2","2","2","2") + '\s*$')
+set_direction = re.compile('^V D=(?P<direction>\+|-)\s*$')
+set_center = re.compile('^V X=' + coords % ("","","","") + '\s*$')
+set_width = re.compile('^V W=(?P<width>\d+\.\d+)\s*$')
+set_zoom = re.compile('^V Z=(?P<zoom>\d+\.\d+)\s*$')
 
-airway = re.compile('^DY ' + coords %  ("","","","") + '$')
+airway = re.compile('^DY ' + coords %  ("","","","") + '\s*$')
 
 re_lines = [aclass,
             aceil,
