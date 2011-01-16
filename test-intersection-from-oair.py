@@ -32,6 +32,10 @@ print "Parsing..."
 p.parse()
 print "[OK] %d zones" %len(p.zones)
 
+shapes = [x.toShapely() for x in p.zones.list]
+
+print "Shapely objs : ", len(shapes)
+
 track = airspace.track.loadSimpleTxt('toto.txt')
 
 print track.GetPointCount()

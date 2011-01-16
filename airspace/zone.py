@@ -17,6 +17,9 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import shapely
+import shapely.wkt
+
 import osgeo.ogr
 import util
 import traceback
@@ -107,6 +110,16 @@ class Zone:
 
         self.current_center = otherzone.current_center
         self.direction = otherzone.direction
+
+    def toShapely(self):
+        try :
+            wkt = self.poly.ExportToWkt()
+            shape = shapely.wkt.loads(wkt)
+            return shape
+        except Exception,e:
+            print self.name
+            print wkt
+            raise e
 
     def finish(self):
         raise ZoneException()
