@@ -43,7 +43,7 @@ from rtree import Rtree
 import util
 import zone
 
-aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$')
+aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$', re.IGNORECASE)
 
 coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
 
@@ -57,20 +57,20 @@ coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+
 
 alti = '(((?P<height>\d+)F )?(?P<ref>AGL|AMSL|SFC|UNL))|(FL(?P<fl>\d+))\s*$'
 
-aceil = re.compile('^AH ' + alti)
-afloor = re.compile('^AL ' + alti)
-aname = re.compile('^AN (?P<name>.*)\s*$')
+aceil = re.compile('^AH ' + alti, re.IGNORECASE)
+afloor = re.compile('^AL ' + alti, re.IGNORECASE)
+aname = re.compile('^AN (?P<name>.*)\s*$', re.IGNORECASE)
 
-poly_point = re.compile('^DP ' + coords % ("","","","") + '\s*$')
-circle = re.compile('^DC (?P<radius>\d+(\.\d+)?)\s*$')
+poly_point = re.compile('^DP ' + coords % ("","","","") + '\s*$', re.IGNORECASE)
+circle = re.compile('^DC (?P<radius>\d+(\.\d+)?)\s*$', re.IGNORECASE)
 
-arc_coord = re.compile('^DB ' + coords % ("1","1","1","1") +','+ coords  % ("2","2","2","2") + '\s*$')
-set_direction = re.compile('^V D=(?P<direction>\+|-)\s*$')
-set_center = re.compile('^V X=' + coords % ("","","","") + '\s*$')
-set_width = re.compile('^V W=(?P<width>\d+\.\d+)\s*$')
-set_zoom = re.compile('^V Z=(?P<zoom>\d+\.\d+)\s*$')
+arc_coord = re.compile('^DB ' + coords % ("1","1","1","1") +','+ coords  % ("2","2","2","2") + '\s*$', re.IGNORECASE)
+set_direction = re.compile('^V D=(?P<direction>\+|-)\s*$', re.IGNORECASE)
+set_center = re.compile('^V X=' + coords % ("","","","") + '\s*$', re.IGNORECASE)
+set_width = re.compile('^V W=(?P<width>\d+\.\d+)\s*$', re.IGNORECASE)
+set_zoom = re.compile('^V Z=(?P<zoom>\d+\.\d+)\s*$', re.IGNORECASE)
 
-airway = re.compile('^DY ' + coords %  ("","","","") + '\s*$')
+airway = re.compile('^DY ' + coords %  ("","","","") + '\s*$', re.IGNORECASE)
 
 re_lines = [aclass,
             aceil,
