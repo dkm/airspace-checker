@@ -42,6 +42,7 @@ from rtree import Rtree
 
 import util
 import zone
+import zone.IgnoreZoneException
 
 aclass = re.compile('^AC (?P<aclass>R|Q|P|A|B|C|D|GP|CTR|W)$', re.IGNORECASE)
 
@@ -164,7 +165,11 @@ class OAIRParser:
         """
 
         if self.current_zone != None:
-            self.zones.append(self.current_zone)
+            try:
+                self.zones.append(self.current_zone)
+            except IgnoreZoneException,e:
+                print "Zone", self.current_zone.name, "ignored:", e
+
         self.current_zone = zone.Zone(aclass=m.group('aclass'))
 
     def aceil_action(self, line, m):

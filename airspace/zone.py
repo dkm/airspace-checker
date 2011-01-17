@@ -26,6 +26,13 @@ import altiresolver
 class ZoneException(Exception):
     pass
 
+class IgnoreZoneException(ZoneException):
+    def __init__(self, reason):
+        self.reason = reason
+
+    def __str__(self):
+        return self.reason
+
 class Zone:
     """
     Describe a zone
@@ -134,9 +141,15 @@ class PolyZone(Zone):
         Closes the zone and returns the polygon
         """
         if self.ring :
+            if self.ring.GetPointCount() == 2:
+                raise IgnoreZoneException("Only 2 points on polygon, most certainly a segment, discarding it.")
+            
+            
             self.ring.CloseRings()
             self.poly.AddGeometry(self.ring)
             self.ring = None
+        else:
+            raise ZoneException()
 
         return self.poly
 
