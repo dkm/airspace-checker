@@ -1,98 +1,109 @@
-//
-//   airspace checker
-//   Copyright (C) 2010  Marc Poulhiès
-//
-//   This program is free software: you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
-//   (at your option) any later version.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of the GNU General Public License
-//   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-//
-// BEWARE, THIS GRAMMAR IS BROKEN. USE IT ONLY AS A BASIS
-//
-
 grammar OpenAir;
 
 options {
     output=AST;
-    language=Python;
+    //language=Python;
 }
 
-tokens {
-   
-    PLUS='+';
-    MINUS='-';
-    EQ='=';
- 
-    COLON=':';
-    COMMA=',';
-}
-
-zone	:	aclass aname aceil afloor geometry;
-
-aname 	:	ANAME EOL;
-                       
-aclass : 'AC'  ('R'|'Q'|'P'|'A'|'B'|'C'|'D'|'GP'|'CTR'|'W') EOL;
-
-aceil	:	'AH' altitude EOL -> altitude;
-afloor	:	'AL' altitude EOL -> altitude;
-
-geometry:	(poly_point|circle|arc_coord|var_set|direction)+;
-
-arc_coord	:	'DB'  coords COMMA coords EOL;
-
-// never used for french AS
-arc_angle
-	:	'DA'  INTEGER COMMA INTEGER COMMA INTEGER EOL;
+FLEVEL	:	'FL' '0'..'9'+
+	;
 	
-poly_point
-	:	'DP'  coords EOL;
+ID  :	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+    ;
+
+
 	
-// never used for french AS
-label_coord
-	:	'AT'  coords EOL;
+INT :	'0'..'9'+
+    ;
+
+FLOAT
+    :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT?
+    |   '.' ('0'..'9')+ EXPONENT?
+    |   ('0'..'9')+ EXPONENT
+    ;
+
+AN_NAME
+	: 'AN' ~('\n'|'\r')* '\r'? '\n'
+	;
 	
-circle	:	'DC'  (INTEGER '.' INTEGER) EOL;
+COMMENT
+    :   '//' ~('\n'|'\r')* '\r'? '\n' {$channel=HIDDEN;}
+    |   '*' ~('\n'|'\r')* '\r'? '\n' {$channel=HIDDEN;}
+    |   '/*' ( options {greedy=false;} : . )* '*/' {$channel=HIDDEN;}
+    ;
 
-var_set	:	'V'  (direction|center|width|zoom) EOL;
+WS  :   ( ' '
+        | '\t'
+        | '\r'
+        | '\n'
+        ) {$channel=HIDDEN;}
+    ;
 
-direction
-	:	'D' EQ (PLUS|MINUS);
-center	:	'X' EQ coords;
-width	:	'W' EQ (INTEGER '.' INTEGER);
-zoom	:	'Z' EQ (INTEGER '.' INTEGER);
+fragment
+EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
 
-//never used for french AS
-airway	:	'DY'  coords EOL;
+oair_file 
+	:	zone+
+	;
+	
+zone	: 	
+	aclass
+	name
+	  ((ceiling floor)|(floor ceiling))
+	geometry
+	;
 
-altitude:	(alti)? ('AGL'|'AMSL'|'FL'|'SFC'|'UNL');
+aclass	:	'AC' ('A'|'C'|'CTR'|'D'|'E'|'GP'|'P'|'Q'|'R'|'W')
+	;
+	
+name	:	AN_NAME
+	;
 
-coords	:	coord  'N'  coord  'E';
+ceiling :	'AH' altitude_specif
+	;
 
-coord	:	INTEGER COLON INTEGER COLON INTEGER;
+floor	:	'AL' altitude_specif
+	;
+	
+altitude_specif
+	:
+	  ((INT ('M'|'F'))? ('AGL'|'AMSL'|'SFC'))
+	| FLEVEL
+	| 'UNL'
+	;
+	
+geometry
+	: 
+          (single_point | circle_arc)*
+	| circle
+	;
+	
+single_point
+	:	'DP' coords
+	;
 
-alti	:	(INTEGER 'F');
+circle_direction
+	: 'V' 'D' '=' ('+'|'-')
+	;
+	
+circle_center 
+	: 'V' 'X' '=' coords
+	;
+	
+circle_arc
+	: circle_direction?
+	  circle_center
+	  'DB' coords ',' coords
+	;
+	
+circle	
+	: circle_direction?
+	  circle_center
+	  'DC' INT
+	;
+
+coords
+	: INT ':' INT ':' INT ('N'|'S') INT ':' INT ':' INT ('E'|'W')
+	;
 
 
-ANAME
-: 'AN ' (('A'..'Z')|('a'..'z')| ('0'..'9')|' '|'.'|'_')+;
-
-INTEGER 
-	:  ('0'..'9')+;
-
-EOL :  '\r'? '\n';
-
-//WS  : (' '){$channel=HIDDEN;};
-
-LINE_COMMENT
-  :  '*' ~( '\r' | '\n' )* {$channel=HIDDEN;}
-  ;
