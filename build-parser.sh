@@ -17,4 +17,4 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 mkdir -p python/generated 
-cd grammar && antlr3 -o ../python/generated/ OpenAir.g && cd -
+cd grammar && java -jar /home/marc/local/stow/antlr3.3/antlr-3.3-complete.jar -o ../python/generated/ OpenAir.g && cd -

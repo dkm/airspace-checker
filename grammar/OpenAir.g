@@ -2,7 +2,16 @@ grammar OpenAir;
 
 options {
     output=AST;
-    //language=Python;
+ //  language=Python;
+}
+
+
+tokens {
+        ZONES;
+        ZONE;
+        CLASS;
+        ALTI;
+        NAME;
 }
 
 FLEVEL	:	'FL' '0'..'9'+
@@ -12,6 +21,10 @@ ID  :	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
     ;
 
 
+COORDS
+	: '0'..'9'+ ' '* ':'  ' '* '0'..'9'+ ' '* (':'|'.') ' '* '0'..'9'+ ' '* ('N'|'S'|'n'|'s') 
+      ' '* '0'..'9'+ ' '* ':' ' '* '0'..'9'+ ' '* (':'|'.') ' '* '0'..'9'+ ' '* ('E'|'W'|'e'|'w')
+	;
 	
 INT :	'0'..'9'+
     ;
@@ -42,8 +55,9 @@ WS  :   ( ' '
 fragment
 EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
 
+
 oair_file 
-	:	zone+
+	:	zone+ -> ^(ZONES zone+)
 	;
 	
 zone	: 	
@@ -51,25 +65,31 @@ zone	:
 	name
 	  ((ceiling floor)|(floor ceiling))
 	geometry
+	 -> ^(ZONE aclass name ceiling floor geometry)
 	;
 
-aclass	:	'AC' ('A'|'C'|'CTR'|'D'|'E'|'GP'|'P'|'Q'|'R'|'W')
+aclass	:	'AC' (c='A'|c='C'|c='CTR'|c='D'|c='E'|c='GP'|c='P'|c='Q'|c='R'|c='W')
+                                      -> ^(CLASS $c)
 	;
 	
-name	:	AN_NAME
+name	:	AN_NAME -> ^(NAME AN_NAME)
 	;
 
-ceiling :	'AH' altitude_specif
+ceiling :	'AH'! altitude_specif
 	;
 
-floor	:	'AL' altitude_specif
+floor	:	'AL'! altitude_specif
 	;
-	
+
+frag_alti
+	: INT ('M'|'F')
+ 	;
+ 	
 altitude_specif
 	:
-	  ((INT ('M'|'F'))? ('AGL'|'AMSL'|'SFC'))
-	| FLEVEL
-	| 'UNL'
+	 (frag_alti? (r='AGL'|r='AMSL'|r='SFC')) -> ^(ALTI frag_alti? $r)
+	| FLEVEL -> ^(ALTI FLEVEL)
+	| 'UNL' -> ^(ALTI 'UNL')
 	;
 	
 geometry
@@ -79,7 +99,7 @@ geometry
 	;
 	
 single_point
-	:	'DP' coords
+	:	'DP' COORDS
 	;
 
 circle_direction
@@ -87,23 +107,20 @@ circle_direction
 	;
 	
 circle_center 
-	: 'V' 'X' '=' coords
+	: 'V' 'X' '=' COORDS
 	;
 	
 circle_arc
 	: circle_direction?
 	  circle_center
-	  'DB' coords ',' coords
+	  'DB' COORDS ',' COORDS
 	;
 	
 circle	
 	: circle_direction?
 	  circle_center
-	  'DC' INT
+	  'DC' (INT | FLOAT)
 	;
 
-coords
-	: INT ':' INT ':' INT ('N'|'S') INT ':' INT ':' INT ('E'|'W')
-	;
 
 
