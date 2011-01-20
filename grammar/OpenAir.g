@@ -2,7 +2,9 @@ grammar OpenAir;
 
 options {
     output=AST;
- //  language=Python;
+    language=Python;
+    backtrack=true;
+    memoize=true;
 }
 
 
@@ -118,7 +120,7 @@ circle_center
 circle_arc
 	: circle_direction?
 	  circle_center
-	  'DB' c1=COORDS ',' c2=COORDS -> ^(CIRCLE_ARC circle_center $c1 $c2 circle_direction)
+	  'DB' c1=COORDS ',' c2=COORDS -> ^(CIRCLE_ARC circle_center $c1 $c2 circle_direction?)
 	;
 	
 circle	
