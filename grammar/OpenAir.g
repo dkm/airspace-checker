@@ -11,6 +11,10 @@ tokens {
         ZONE;
         CLASS;
         ALTI;
+        POLYGON;
+        BASE_ALTI;
+        CIRCLE;
+        CIRCLE_ARC;
         NAME;
 }
 
@@ -82,44 +86,45 @@ floor	:	'AL'! altitude_specif
 	;
 
 frag_alti
-	: INT ('M'|'F')
+	: INT (s='M'|s='F') -> ^(BASE_ALTI INT $s)
  	;
  	
 altitude_specif
 	:
-	 (frag_alti? (r='AGL'|r='AMSL'|r='SFC')) -> ^(ALTI frag_alti? $r)
+	  (frag_alti (r='AGL'|r='AMSL'|r='SFC')) -> ^(ALTI frag_alti $r)
+	| (frag_alti? 'SFC') -> ^(ALTI frag_alti? 'SFC')
 	| FLEVEL -> ^(ALTI FLEVEL)
 	| 'UNL' -> ^(ALTI 'UNL')
 	;
 	
 geometry
 	: 
-          (single_point | circle_arc)*
+          (single_point | circle_arc)* 
 	| circle
 	;
 	
 single_point
-	:	'DP' COORDS
+	:	'DP'! COORDS 
 	;
 
 circle_direction
-	: 'V' 'D' '=' ('+'|'-')
+	: 'V'! 'D'! '='! ('+'|'-')
 	;
 	
 circle_center 
-	: 'V' 'X' '=' COORDS
+	: 'V'! 'X'! '='! COORDS
 	;
 	
 circle_arc
 	: circle_direction?
 	  circle_center
-	  'DB' COORDS ',' COORDS
+	  'DB' c1=COORDS ',' c2=COORDS -> ^(CIRCLE_ARC circle_center $c1 $c2 circle_direction)
 	;
 	
 circle	
-	: circle_direction?
+	: 
 	  circle_center
-	  'DC' (INT | FLOAT)
+	  'DC' (r=INT | r=FLOAT) -> ^(CIRCLE circle_center $r)
 	;
 
 
