@@ -13,6 +13,7 @@ tokens {
         ZONE;
         CLASS;
         ALTI;
+        GEOMETRY;
         POLYGON;
         BASE_ALTI;
         CIRCLE;
@@ -71,7 +72,7 @@ zone	:
 	name
 	  ((ceiling floor)|(floor ceiling))
 	geometry
-	 -> ^(ZONE aclass name ceiling floor geometry)
+	 -> ^(ZONE aclass name ceiling floor ^(GEOMETRY geometry))
 	;
 
 aclass	:	'AC' (c='A'|c='C'|c='CTR'|c='D'|c='E'|c='GP'|c='P'|c='Q'|c='R'|c='W')
