@@ -10,6 +10,15 @@ options {
     language=Python;
 }
 
+@header {
+import geojson
+import airspace.util
+}
+
+@members {
+
+}
+
 oair_file 
 	: ^(ZONES zone+)
 	;
@@ -48,8 +57,10 @@ geometry
 	|  circle
 	;
 	
-single_point
-	: COORDS 
+single_point returns [point]
+	: COORDS {
+	     $point = geojson.Point([airspace.util.rawLatLonConv($COORDS.text)])
+	  }
 	;
 
 circle_direction
