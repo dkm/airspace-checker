@@ -23,16 +23,25 @@ import sys
 
 from OpenAirLexer import OpenAirLexer
 from OpenAirParser import OpenAirParser
+from OpenAirWalker import OpenAirWalker
 
 finput = open(sys.argv[1])
-input = finput.read().decode('latin-1')
-char_stream = antlr3.ANTLRStringStream(input)
-# or to parse a file:
-# char_stream = antlr3.ANTLRFileStream(path_to_input)
-# or to parse an opened file or any other file-like object:
-# char_stream = antlr3.ANTLRInputStream(file)
+linput = finput.read().decode('latin-1')
+
+char_stream = antlr3.ANTLRStringStream(linput)
 
 lexer = OpenAirLexer(char_stream)
 tokens = antlr3.CommonTokenStream(lexer)
 parser = OpenAirParser(tokens)
-parser.oair_file()
+
+oair = parser.oair_file()
+
+tree = oair.tree
+
+nodes = antlr3.tree.CommonTreeNodeStream(tree)
+nodes.setTokenStream(tokens)
+walker = OpenAirWalker(nodes)
+
+res = walker.oair_file()
+
+print res
