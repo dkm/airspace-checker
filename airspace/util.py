@@ -166,6 +166,13 @@ def getArcIndex(ls, startPoint, endPoint):
     ei,ed = findNearestIndexInLineString(ls, endPoint)
     return (si, ei)
 
+coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
+
+def rawLatLonConv(raw):
+    m = re.match(coords % ("","","",""), raw)
+    if m:
+        return latlon_to_deg(m)
+        
 def latlonStr_to_deg(lat, latdir, lon, londir):
     """
     Converts various lat/lon string coordinates representation
