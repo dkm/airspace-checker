@@ -1,11 +1,12 @@
 tree grammar OpenAirWalker;
 
+
 options {
     tokenVocab=OpenAir;
     ASTLabelType=CommonTree;
-    backtrack=true;
+//    backtrack=true;
     memoize=true;
-    output=AST;
+  //  output=AST;
     language=Python;
 }
 
@@ -35,8 +36,8 @@ frag_alti
  	
 altitude_specif
 	:
-	  ^(ALTI frag_alti ('AGL'|'AMSL'|'SFC'))
-	| ^(ALTI frag_alti? 'SFC')
+	  ^(ALTI frag_alti ('AGL'|'AMSL'))
+	| ^(ALTI frag_alti? ('SFC')) 
 	| ^(ALTI FLEVEL)
 	| ^(ALTI 'UNL')
 	;
