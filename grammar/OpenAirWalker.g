@@ -11,7 +11,7 @@ options {
 }
 
 @header {
-import geojson
+import shapely.geometry
 import airspace.util
 }
 
@@ -51,31 +51,52 @@ altitude_specif
 	| ^(ALTI 'UNL')
 	;
 	
-geometry
+geometry returns [polygon]
+@init{
+ points = []
+}
 	: 
-                         (single_point | circle_arc)* 
-	|  circle
+                        ((single_point {points.append($single_point.point)}| circle_arc {points += $circle_arc.points})*)
+                        {$polygon = shapely.geometry.Polygon(points)}
+	|  circle {$polygon = $circle.polygon}
 	;
 	
 single_point returns [point]
 	: COORDS {
-	     $point = geojson.Point([airspace.util.rawLatLonConv($COORDS.text)])
+	     $point = airspace.util.rawLatLonConv($COORDS.text)
 	  }
 	;
 
-circle_direction
-	:  ('+'|'-')
+circle_direction returns [direction]
+	:  ('+' {$direction = "cw"}|'-' {$direction = "ccw"})
 	;
 	
-circle_center 
-	:  COORDS
+circle_center  returns [spoint]
+	:  COORDS {
+	      $spoint = shapely.geometry.Point(airspace.util.rawLatLonConv($COORDS.text))
+	   }
 	;
 	
-circle_arc
-	:  ^(CIRCLE_ARC circle_center COORDS COORDS circle_direction?)
+circle_arc returns [points]
+@init{
+ direction = "ccw"
+}
+	:  ^(CIRCLE_ARC circle_center c1=COORDS c2=COORDS 
+	       (circle_direction{direction=$circle_direction.direction})?)
+{
+ point1 = shapely.geometry.Point(airspace.util.rawLatLonConv($c1.text))
+ point2 = shapely.geometry.Point(airspace.util.rawLatLonConv($c2.text))
+ center = $circle_center.spoint
+ $points = airspace.util.getArc2(center, point1, point2, direction)
+}
 	;
 	
-circle	
+circle returns [polygon]
+@init{
+r=None
+}
 	: 
-	   ^(CIRCLE circle_center (INT | FLOAT))
+	   ^(CIRCLE circle_center (INT{r = float($INT.text)} | FLOAT {r = float($FLOAT.text)})){
+	     $polygon = airspace.util.getCircle2($circle_center.spoint, r)
+	   }
 	;

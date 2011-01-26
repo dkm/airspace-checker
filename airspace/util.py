@@ -26,10 +26,81 @@ import os.path
 import sys
 import math
 
+import pyproj
+import shapely.geometry
+
 latlong = osgeo.osr.SpatialReference()
 ortho = osgeo.osr.SpatialReference()
 latlong.ImportFromProj4('+proj=latlong')
 
+geod_wgs84 = pyproj.Geod(ellps='WGS84')
+
+def getCircle2(center, radius, quadseg=90):
+    """
+    Returns a polygon object approximating a circle centered on
+    'center' with a radius 'radius'. Radius is the geodetic distance
+    expressed in km.
+    """
+    long2, lat2, invangle = geod_wgs84.fwd(center.x, center.y, 0, radius*1000)
+    point_on_circle = shapely.geometry.Point((long2, lat2))
+
+    rad_angle = center.distance(point_on_circle)
+    circle = center.buffer(rad_angle, quadseg)
+    return circle
+
+def getArc2(center, point1, point2, direction="ccw"):
+    az1,az2,arc_radius = geod_wgs84.inv(point1.x, point1.y, center.x, center.y)
+
+    circle = getCircle2(center, arc_radius)
+    
+    circle_ls = circle.exterior.coords
+    ((lp1,lp1_idx), (lp2, lp2_idx)) = findNearestPoints2(circle_ls, point1, point2)
+    
+    points = []
+
+    si,ei = lp1_idx, lp2_idx
+
+    if si > ei:
+        if direction == "ccw":
+            points += [x for x in reversed(list(circle_ls)[si:ei+1])]
+        else:
+            points += list(circle_ls)[si:]
+            points += list(circle_ls)[:ei]
+                
+    else: # si <= ei
+        if direction == "ccw":
+            points += [x for x in reversed(list(circle_ls)[0:si+1])]
+            points += [x for x in reversed(list(circle_ls)[ei:])]
+        else:
+            points += list(circle_ls)[si:ei+1]
+  
+    return points
+    
+
+def findNearestPoints2(line, point1, point2):
+    d1 = None
+    nn1 = None
+    nn1_idx = None
+
+    d2 = None
+    nn2 = None
+    nn2_idx = None
+
+    for idx_p, p in enumerate(line) :
+        sp = shapely.geometry.Point(p)
+        td1 = point1.distance(sp)
+        td2 = point2.distance(sp)
+
+        if not d1 or td1 < d1 :
+            d1 = td1
+            nn1 = sp
+            nn1_idx = idx_p
+        if not d2 or td2 < d2 :
+            d2 = td2
+            nn2 = sp
+            nn2_idx = idx_p
+
+    return ((nn1, nn1_idx), (nn2, nn2_idx))
 
 def getCircle(center, point, quadseg=90):
     """
@@ -165,6 +236,9 @@ def getArcIndex(ls, startPoint, endPoint):
     si,sd = findNearestIndexInLineString(ls, startPoint)
     ei,ed = findNearestIndexInLineString(ls, endPoint)
     return (si, ei)
+
+
+
 
 coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
 
