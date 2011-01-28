@@ -44,4 +44,3 @@ walker = OpenAirWalker(nodes)
 
 res = walker.oair_file()
 
-print res
