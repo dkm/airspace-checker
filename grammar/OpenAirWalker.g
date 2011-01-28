@@ -23,32 +23,50 @@ oair_file
 	: ^(ZONES zone+)
 	;
 	
-zone	 	
+zone returns [zone_desc]
 	: ^(ZONE aclass name ceiling floor ^(GEOMETRY geometry))
+        {
+            meta={'class': $aclass.aclass, 
+                  'name': $name.name,
+                  'ceiling': $ceiling.ceiling,
+                  'floor': $floor.floor
+                  }
+            
+        }
 	;
 
-aclass	: ^(CLASS  ('A'|'C'|'CTR'|'D'|'E'|'GP'|'P'|'Q'|'R'|'W'))
+aclass	returns [aclass]
+    : ^(CLASS  ('A'{$aclass='A'}|'C'{$aclass='C'}|'CTR'{$aclass='CTR'}|'D'{$aclass='D'}|'E'{$aclass='E'}|'GP'{$aclass='GP'}|'P'{$aclass='P'}|'Q'{$aclass='Q'}|'R'{$aclass='R'}|'W'{$aclass='W'}))
 	;
 	
-name	: ^(NAME AN_NAME)
+name returns [name]	: ^(NAME AN_NAME) {$name = $AN_NAME.text}
 	;
 
-ceiling 	: altitude_specif
+ceiling returns [ceiling]
+ 	: altitude_specif {$ceiling = $altitude_specif.altispecif}
 	;
 
-floor	: altitude_specif
+floor returns [floor]
+    : altitude_specif {$floor = $altitude_specif.altispecif}
 	;
 
-frag_alti
-	: ^(BASE_ALTI INT ('F'|'M'))
+frag_alti returns [absalti]
+	: ^(BASE_ALTI INT{$absalti=float($INT.text)} ('F'{$absalti=$absalti*0.3048}|'M'))
  	;
  	
-altitude_specif
+altitude_specif returns [altispecif]
+@init {
+    $altispecif = {}
+}
 	:
-	  ^(ALTI frag_alti ('AGL'|'AMSL'))
-	| ^(ALTI frag_alti? ('SFC')) 
-	| ^(ALTI FLEVEL)
-	| ^(ALTI 'UNL')
+	  ^(ALTI frag_alti (r='AGL'|r='AMSL') 
+        {
+        $altispecif['basealti']=$frag_alti.absalti
+        $altispecif['ref'] = $r.text
+        })
+	| ^(ALTI (frag_alti{$altispecif['basealti']=$frag_alti.absalti})? ('SFC') {$altispecif['ref'] = 'SFC'}) 
+	| ^(ALTI FLEVEL {$altispecif['flevel']=$FLEVEL.text})
+	| ^(ALTI 'UNL' {$altispecif['nolimit']=True})
 	;
 	
 geometry returns [polygon]
