@@ -19,8 +19,11 @@ import airspace.util
 
 }
 
-oair_file 
-	: ^(ZONES zone+)
+oair_file returns [zones]
+@init{
+    zones = []
+}
+	: ^(ZONES (zone{zones.append($zone.zone_desc)})+)
 	;
 	
 zone returns [zone_desc]
@@ -31,7 +34,7 @@ zone returns [zone_desc]
                   'ceiling': $ceiling.ceiling,
                   'floor': $floor.floor
                   }
-            
+            $zone_desc = (meta, $geometry.polygon)
         }
 	;
 
@@ -74,8 +77,12 @@ geometry returns [polygon]
  points = []
 }
 	: 
-                        ((single_point {points.append($single_point.point)}| circle_arc {points += $circle_arc.points})*)
-                        {$polygon = shapely.geometry.Polygon(points)}
+    (
+      ( single_point {points.append($single_point.point)}
+      | circle_arc {points += $circle_arc.points})*
+    ) {
+         $polygon = shapely.geometry.Polygon(points)}
+
 	|  circle {$polygon = $circle.polygon}
 	;
 	
