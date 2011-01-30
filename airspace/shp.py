@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#   airspace checker
+#   Copyright (C) 2010  Marc Poulhiès
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+import osgeo.ogr
+import osgeo.osr
+
+import shapely.wkt
+
+def toShp(filename, zones):
+    spatialRef = osgeo.osr.SpatialReference()
+    spatialRef.SetWellKnownGeogCS('WGS84')
+    driver = osgeo.ogr.GetDriverByName('ESRI Shapefile')
+    dstFile = driver.CreateDataSource(filename)
+    dstLayer = dstFile.CreateLayer("layer",  spatialRef)
+    
+    fieldDef = osgeo.ogr.FieldDefn("NAME", osgeo.ogr.OFTString)
+    fieldDef.SetWidth(100)
+    dstLayer.CreateField(fieldDef)
+    
+    fieldDef = osgeo.ogr.FieldDefn("CLASS", osgeo.ogr.OFTString)
+    fieldDef.SetWidth(5)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("CEILING", osgeo.ogr.OFTString)
+    fieldDef.SetWidth(30)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("FLOOR", osgeo.ogr.OFTString)
+    fieldDef.SetWidth(100)
+    dstLayer.CreateField(fieldDef)
+
+    for meta,geometry in zones:
+        buf = osgeo.ogr.CreateGeometryFromWkt(shapely.wkt.dumps(geometry))
+        feature = osgeo.ogr.Feature(dstLayer.GetLayerDefn())
+        feature.SetGeometry(buf)
+
+        feature.SetField("NAME", meta['name'])
+        feature.SetField("CLASS", meta['class'])
+        feature.SetField("CEILING", meta['ceiling'])
+        feature.SetField("FLOOR", meta['floor'])
+        dstLayer.CreateFeature(feature)
+
+        feature.Destroy()
+
+    dstFile.Destroy()
+        

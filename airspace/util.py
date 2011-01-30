@@ -31,6 +31,7 @@ import shapely.geometry
 
 latlong = osgeo.osr.SpatialReference()
 ortho = osgeo.osr.SpatialReference()
+
 latlong.ImportFromProj4('+proj=latlong')
 
 geod_wgs84 = pyproj.Geod(ellps='WGS84')
@@ -38,20 +39,43 @@ geod_wgs84 = pyproj.Geod(ellps='WGS84')
 def getCircle2(center, radius, quadseg=90):
     """
     Returns a polygon object approximating a circle centered on
-    'center' with a radius 'radius'. Radius is the geodetic distance
-    expressed in km.
+    'center' with a radius 'radius'. Radius in meters.
     """
-    long2, lat2, invangle = geod_wgs84.fwd(center.x, center.y, 0, radius*1000)
-    point_on_circle = shapely.geometry.Point((long2, lat2))
 
-    rad_angle = center.distance(point_on_circle)
-    circle = center.buffer(rad_angle, quadseg)
-    return circle
+    long2, lat2, invangle = geod_wgs84.fwd(center.x, center.y, 0, radius)
+
+    return getCircleByPoints(center, shapely.geometry.Point(long2, lat2))
+
+def getCircleByPoints(center, point, quadseg=90):
+    """
+    Returns a polygon object approximating a circle centered on
+    'center' with a radius 'radius'. Radius in meters.
+    """
+
+    dstproj = pyproj.Proj('+proj=ortho +lon_0=%f +lat_0=%f' % (center.x, center.y))
+    srcproj = pyproj.Proj(ellps='WGS84', proj='latlong')
+    new_cx, new_cy = pyproj.transform(srcproj, dstproj, center.x, center.y)
+    new_px, new_py = pyproj.transform(srcproj, dstproj, point.x, point.y)
+
+    s_c = shapely.geometry.Point(new_cx, new_cy)
+    s_p = shapely.geometry.Point(new_px, new_py)
+
+    circle = s_c.buffer(s_c.distance(s_p), quadseg)
+    
+    cpoints = []
+    # project back to lat/lon
+    for px,py in circle.exterior.coords:
+        x,y = pyproj.transform(dstproj, srcproj, px, py)
+        cpoints.append((x,y))
+    return shapely.geometry.Polygon(cpoints)
 
 def getArc2(center, point1, point2, direction="ccw"):
+
     az1,az2,arc_radius = geod_wgs84.inv(point1.x, point1.y, center.x, center.y)
 
-    circle = getCircle2(center, arc_radius)
+    radius = shapely.geometry.Point(point1).distance(shapely.geometry.Point(point2))
+
+    circle = getCircleByPoints(center, point1)
     
     circle_ls = circle.exterior.coords
     ((lp1,lp1_idx), (lp2, lp2_idx)) = findNearestPoints2(circle_ls, point1, point2)
@@ -61,19 +85,18 @@ def getArc2(center, point1, point2, direction="ccw"):
     si,ei = lp1_idx, lp2_idx
 
     if si > ei:
-        if direction == "ccw":
+        if direction != "ccw":
             points += [x for x in reversed(list(circle_ls)[ei:si+1])]
         else:
             points += list(circle_ls)[si:]
             points += list(circle_ls)[:ei]
-                
     else: # si <= ei
-        if direction == "ccw":
+        if direction != "ccw":
             points += [x for x in reversed(list(circle_ls)[0:si+1])]
             points += [x for x in reversed(list(circle_ls)[ei:])]
         else:
             points += list(circle_ls)[si:ei+1]
-  
+
     return points
     
 
@@ -237,15 +260,18 @@ def getArcIndex(ls, startPoint, endPoint):
     ei,ed = findNearestIndexInLineString(ls, endPoint)
     return (si, ei)
 
-
-
-
 coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
 
 def rawLatLonConv(raw):
     m = re.match(coords % ("","","",""), raw)
     if m:
         return latlon_to_deg(m)
+
+def rawLatLonConvToLonLat(raw):
+    m = re.match(coords % ("","","",""), raw)
+    if m:
+        lat,lon = latlon_to_deg(m)
+        return (lon,lat)
         
 def latlonStr_to_deg(lat, latdir, lon, londir):
     """
