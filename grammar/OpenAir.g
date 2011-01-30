@@ -94,10 +94,11 @@ frag_alti
  	
 altitude_specif
 	:
-	  (frag_alti (r='AGL'|r='AMSL'|r='SFC')) -> ^(ALTI frag_alti $r)
+	  (frag_alti (r='AGL'|r='AMSL'|r='SFC'|r='ASFC')) -> ^(ALTI frag_alti $r)
 	| (frag_alti? 'SFC') -> ^(ALTI frag_alti? 'SFC')
 	| FLEVEL -> ^(ALTI FLEVEL)
 	| 'UNL' -> ^(ALTI 'UNL')
+    | 'GND' -> ^(ALTI 'GND')
 	;
 	
 geometry
@@ -121,6 +122,7 @@ circle_center
 circle_arc
 	: circle_direction?
 	  circle_center
+      circle_direction?
 	  'DB' c1=COORDS ',' c2=COORDS -> ^(CIRCLE_ARC circle_center $c1 $c2 circle_direction?)
 	;
 	

@@ -62,7 +62,7 @@ altitude_specif returns [altispecif]
     $altispecif = {}
 }
 	:
-	  ^(ALTI frag_alti (r='AGL'|r='AMSL') 
+	  ^(ALTI frag_alti (r='AGL'|r='AMSL'|r='ASFC') 
         {
         $altispecif['basealti']=$frag_alti.absalti
         $altispecif['ref'] = $r.text
@@ -70,6 +70,7 @@ altitude_specif returns [altispecif]
 	| ^(ALTI (frag_alti{$altispecif['basealti']=$frag_alti.absalti})? ('SFC') {$altispecif['ref'] = 'SFC'}) 
 	| ^(ALTI FLEVEL {$altispecif['flevel']=$FLEVEL.text})
 	| ^(ALTI 'UNL' {$altispecif['nolimit']=True})
+	| ^(ALTI 'GND' {$altispecif['fromground']=True})
 	;
 	
 geometry returns [polygon]
@@ -79,7 +80,7 @@ geometry returns [polygon]
 	: 
     (
       ( single_point {points.append($single_point.point)}
-      | circle_arc {points += $circle_arc.points})*
+      | circle_arc {points += $circle_arc.points})+
     ) {
          $polygon = shapely.geometry.Polygon(points)}
 
@@ -88,7 +89,7 @@ geometry returns [polygon]
 	
 single_point returns [point]
 	: COORDS {
-	     $point = airspace.util.rawLatLonConv($COORDS.text)
+         $point = airspace.util.rawLatLonConv($COORDS.text)
 	  }
 	;
 
