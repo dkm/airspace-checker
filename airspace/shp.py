@@ -23,7 +23,7 @@ import osgeo.osr
 
 import shapely.wkt
 
-def toShp(filename, zones):
+def writeToShp(filename, zones):
     spatialRef = osgeo.osr.SpatialReference()
     spatialRef.SetWellKnownGeogCS('WGS84')
     driver = osgeo.ogr.GetDriverByName('ESRI Shapefile')
@@ -61,3 +61,28 @@ def toShp(filename, zones):
 
     dstFile.Destroy()
         
+
+
+def loadFromShp(shpfile):
+    srcFile = osgeo.ogr.Open(shpfile)
+    srcLayer = srcFile.GetLayer(0)
+    
+    zones = []
+
+    for i in range(srcLayer.GetFeatureCount()):
+        feature = srcLayer.GetFeature(i)
+        name = feature.GetField("NAME")
+        aclass = feature.GetField("CLASS")
+        ceiling = feature.GetField("CEILING")
+        floor = feature.GetField("FLOOR")
+        geometry = feature.GetGeometryRef()
+        
+        meta = {'name' : name,
+                'class': aclass,
+                'ceiling': ceiling,
+                'floor' : floor}
+        sh_geometry = shapely.wkt.loads(geometry.ExportToWkt())
+
+        zones.append((meta,sh_geometry))
+    return zones
+

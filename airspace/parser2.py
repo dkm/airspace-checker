@@ -23,29 +23,8 @@ import sys
 import shp
 import mapnikexport
 
-from OpenAirLexer import OpenAirLexer
-from OpenAirParser import OpenAirParser
-from OpenAirWalker import OpenAirWalker
+zones = shp.loadFromShp("test.shp")
 
-finput = open(sys.argv[1])
-linput = finput.read().decode('latin-1')
-
-char_stream = antlr3.ANTLRStringStream(linput)
-
-lexer = OpenAirLexer(char_stream)
-tokens = antlr3.CommonTokenStream(lexer)
-parser = OpenAirParser(tokens)
-
-oair = parser.oair_file()
-
-tree = oair.tree
-
-nodes = antlr3.tree.CommonTreeNodeStream(tree)
-nodes.setTokenStream(tokens)
-walker = OpenAirWalker(nodes)
-
-res = walker.oair_file()
-
-shp.writeToShp("test.shp", res)
+print "loaded: ", len(zones)
 
 mapnikexport.toMapnik("test.shp", "test.png")
