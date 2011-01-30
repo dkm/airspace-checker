@@ -89,7 +89,7 @@ geometry returns [polygon]
 	
 single_point returns [point]
 	: COORDS {
-         $point = airspace.util.rawLatLonConv($COORDS.text)
+         $point = airspace.util.rawLatLonConvToLonLat($COORDS.text)
 	  }
 	;
 
@@ -99,7 +99,7 @@ circle_direction returns [direction]
 	
 circle_center  returns [spoint]
 	:  COORDS {
-	      $spoint = shapely.geometry.Point(airspace.util.rawLatLonConv($COORDS.text))
+	      $spoint = shapely.geometry.Point(airspace.util.rawLatLonConvToLonLat($COORDS.text))
 	   }
 	;
 	
@@ -110,8 +110,8 @@ circle_arc returns [points]
 	:  ^(CIRCLE_ARC circle_center c1=COORDS c2=COORDS 
 	       (circle_direction{direction=$circle_direction.direction})?)
 {
- point1 = shapely.geometry.Point(airspace.util.rawLatLonConv($c1.text))
- point2 = shapely.geometry.Point(airspace.util.rawLatLonConv($c2.text))
+ point1 = shapely.geometry.Point(airspace.util.rawLatLonConvToLonLat($c1.text))
+ point2 = shapely.geometry.Point(airspace.util.rawLatLonConvToLonLat($c2.text))
  center = $circle_center.spoint
  $points = airspace.util.getArc2(center, point1, point2, direction)
 }
@@ -123,6 +123,6 @@ r=None
 }
 	: 
 	   ^(CIRCLE circle_center (INT{r = float($INT.text)} | FLOAT {r = float($FLOAT.text)})){
-	     $polygon = airspace.util.getCircle2($circle_center.spoint, r)
+	     $polygon = airspace.util.getCircle2($circle_center.spoint, r*1000)
 	   }
 	;
