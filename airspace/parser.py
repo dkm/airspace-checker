@@ -18,34 +18,35 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import antlr3
-import sys
+# import sys
 
-import shp
-import mapnikexport
+# import shp
+# import mapnikexport
 
 from OpenAirLexer import OpenAirLexer
 from OpenAirParser import OpenAirParser
 from OpenAirWalker import OpenAirWalker
 
-finput = open(sys.argv[1])
-linput = finput.read().decode('latin-1')
+def parse(filename):
+    finput = open(filename)
+    linput = finput.read().decode('latin-1')
 
-char_stream = antlr3.ANTLRStringStream(linput)
+    char_stream = antlr3.ANTLRStringStream(linput)
 
-lexer = OpenAirLexer(char_stream)
-tokens = antlr3.CommonTokenStream(lexer)
-parser = OpenAirParser(tokens)
+    lexer = OpenAirLexer(char_stream)
+    tokens = antlr3.CommonTokenStream(lexer)
+    parser = OpenAirParser(tokens)
 
-oair = parser.oair_file()
+    oair = parser.oair_file()
 
-tree = oair.tree
+    tree = oair.tree
 
-nodes = antlr3.tree.CommonTreeNodeStream(tree)
-nodes.setTokenStream(tokens)
-walker = OpenAirWalker(nodes)
+    nodes = antlr3.tree.CommonTreeNodeStream(tree)
+    nodes.setTokenStream(tokens)
+    walker = OpenAirWalker(nodes)
 
-res = walker.oair_file()
+    res = walker.oair_file()
+    return res
+    # shp.writeToShp("test.shp", res)
 
-shp.writeToShp("test.shp", res)
-
-mapnikexport.toMapnik("test.shp", "test.png")
+    # mapnikexport.toMapnik("test.shp", "test.png")
