@@ -17,6 +17,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# For the loadTracksFromGpx() method, mainly based on ogr2osm.py:
+#####################################################################################
+#   "THE BEER-WARE LICENSE":                                                        #
+#   <ivan@sanchezortega.es> wrote this file. As long as you retain this notice you  #
+#   can do whatever you want with this stuff. If we meet some day, and you think    #
+#   this stuff is worth it, you can buy me a beer in return.                        #
+#####################################################################################
 
 import re
 import osgeo.ogr
@@ -35,6 +42,10 @@ ortho = osgeo.osr.SpatialReference()
 latlong.ImportFromProj4('+proj=latlong')
 
 geod_wgs84 = pyproj.Geod(ellps='WGS84')
+
+# needed for loading elevation data from GPX.
+# if not set, then elevation is not set (=>0)
+os.environ['GPX_ELE_AS_25D'] = 'YES'
 
 def getCircle2(center, radius, quadseg=90):
     """
@@ -361,4 +372,68 @@ def writeGeometriesToShapeFile(geometries, shapefile):
         layer.CreateFeature(feature)
         feature.Destroy()
     shp.Destroy()
+
+def loadTracksFromGpx(gpxfilename, detectProjection=True):
+    """
+    From a GPX, loads all lines/multilines and returns
+    WKT representation
+    """
+    driver = osgeo.ogr.GetDriverByName('GPX')
+    dataSource = driver.Open(gpxfilename, 0)
+    geoms_to_return = []
+
+    for i in xrange(dataSource.GetLayerCount()):
+	layer = dataSource.GetLayer(i)
+	layer.ResetReading()
+	
+	spatialRef = None
+	if detectProjection:
+            spatialRef = layer.GetSpatialRef()
+	# elif useProj4:
+	# 	spatialRef = osr.SpatialReference()
+	# 	spatialRef.ImportFromProj4(sourceProj4)
+
+            
+	if spatialRef == None:	
+            # No source proj specified yet? Then default to do no reprojection.
+            # Some python magic: skip reprojection
+            # altogether by using a dummy lamdba
+            # funcion. Otherwise, the lambda will
+            # be a call to the OGR reprojection
+            # stuff.
+            reproject = lambda(geometry): None
+	else:
+            destSpatialRef = osgeo.osr.SpatialReference()
+            destSpatialRef.ImportFromEPSG(4326)	
+            # Destionation projection will *always* be EPSG:4326,
+            # WGS84 lat-lon
+            coordTrans = osgeo.osr.CoordinateTransformation(spatialRef,destSpatialRef)
+            reproject = lambda(geometry): geometry.Transform(coordTrans)
+
+        featureDefinition = layer.GetLayerDefn()
+
+	for j in range(layer.GetFeatureCount()):
+            feature = layer.GetNextFeature()
+            geometry = feature.GetGeometryRef()
+            geometryType = geometry.GetGeometryType()
+            
+            ls = []
+
+            if  geometryType == osgeo.ogr.wkbLineString or geometryType == osgeo.ogr.wkbLineString25D:
+                if geometry.GetPointCount() <= 2:
+                    continue
+                ls.append(geometry)
+            elif geometryType == osgeo.ogr.wkbMultiLineString or geometryType == osgeo.ogr.wkbMultiLineString25D:
+                for i in xrange(geometry.GetGeometryCount()):
+                    subgeom = geometry.GetGeometryRef(i)
+                    if subgeom.GetPointCount() <= 2:
+                        continue
+                    else:
+                        ls.append(subgeom)
+                for line in ls:
+                    reproject(line)
+                    geoms_to_return.append(line.ExportToWkt())
+
+    return geoms_to_return
+
 
