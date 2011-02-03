@@ -26,13 +26,18 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description='Check airspace.')
-    parser.add_argument('track', metavar='t', type=str, 
+    parser.add_argument('--track', metavar='GPX', type=str, 
                         help='a track to check')
-    parser.add_argument('airspace', metavar='a', type=str, 
-                        help='airspace data')
+    parser.add_argument('--shapefile', metavar='SHP', type=str, 
+                        help='airspace data as ESRI Shapefile')
 
     args = parser.parse_args()
 
+    res = airspace.shp.loadFromShp(args.shapefile)
+    if res:
+        print "res: ", len(res)
+    else:
+        print "nothing"
 
 if __name__ == "__main__":
     main()
