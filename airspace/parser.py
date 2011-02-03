@@ -18,10 +18,6 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import antlr3
-# import sys
-
-# import shp
-# import mapnikexport
 
 from OpenAirLexer import OpenAirLexer
 from OpenAirParser import OpenAirParser
@@ -47,6 +43,3 @@ def parse(filename):
 
     res = walker.oair_file()
     return res
-    # shp.writeToShp("test.shp", res)
-
-    # mapnikexport.toMapnik("test.shp", "test.png")
