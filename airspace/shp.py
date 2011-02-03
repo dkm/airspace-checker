@@ -51,13 +51,14 @@ def writeToShp(filename, zones):
         feature = osgeo.ogr.Feature(dstLayer.GetLayerDefn())
         feature.SetGeometry(buf)
 
-        feature.SetField("NAME", meta['name'])
-        feature.SetField("CLASS", meta['class'])
+        feature.SetField("NAME", meta['name'].encode("iso-8859-15"))
+        feature.SetField("CLASS", meta['class'].encode("iso-8859-15"))
         feature.SetField("CEILING", meta['ceiling'])
         feature.SetField("FLOOR", meta['floor'])
         dstLayer.CreateFeature(feature)
 
         feature.Destroy()
+            
 
     dstFile.Destroy()
         
