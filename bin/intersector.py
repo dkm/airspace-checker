@@ -20,6 +20,8 @@
 import sys
 import airspace
 import airspace.shp
+import airspace.track
+import rtree
 
 import argparse
 
@@ -27,17 +29,56 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(description='Check airspace.')
     parser.add_argument('--track', metavar='GPX', type=str, 
-                        help='a track to check')
+                        help='a track to check', required=True)
+
     parser.add_argument('--shapefile', metavar='SHP', type=str, 
-                        help='airspace data as ESRI Shapefile')
+                        help='airspace data as ESRI Shapefile',
+                        required=True)
 
     args = parser.parse_args()
 
-    res = airspace.shp.loadFromShp(args.shapefile)
-    if res:
-        print "res: ", len(res)
+    zones = airspace.shp.loadFromShp(args.shapefile)
+
+    if zones:
+        print "Loaded %s zones" % len(zones)
     else:
-        print "nothing"
+        print "No zone loaded, exiting..."
+        return -1
+
+    tracks = airspace.track.loadFromGpxToShapely(args.track)
+
+    if not tracks:
+        print "Could not load any track, exiting"
+        return -1
+
+    spatial_index = rtree.Rtree()
+
+    # build spatial index for airspaces
+    for idx,zone in enumerate(zones):
+        bbox = zone[1].bounds
+        spatial_index.add(idx, bbox)
+    
+    # first filtering wrt. spatial index
+    potential_zones = []
+    for track in tracks:
+        potential_zones += [(zones[i], track) for i in spatial_index.intersection(track.bounds)]
+    
+    print "Potential zones after first filter:", len(potential_zones)
+    
+    potential_zones2 = []
+
+    for pot_zone,track in potential_zones:
+        if track.intersects(pot_zone[1]):
+            inter_track = pot_zone[1].intersection(track)
+            potential_zones2.append((pot_zone, track, inter_track))
+    
+    print "Found %d potential zone(s):" % len(potential_zones2)
+
+    for pot_z,t,it in potential_zones2:
+        print " - %s" % pot_z[0]['name']
+    
+    return 0
+    
 
 if __name__ == "__main__":
     main()
