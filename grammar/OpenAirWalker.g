@@ -42,7 +42,7 @@ aclass	returns [aclass]
     : ^(CLASS  ('A'{$aclass='A'}|'C'{$aclass='C'}|'CTR'{$aclass='CTR'}|'D'{$aclass='D'}|'E'{$aclass='E'}|'GP'{$aclass='GP'}|'P'{$aclass='P'}|'Q'{$aclass='Q'}|'R'{$aclass='R'}|'W'{$aclass='W'}))
 	;
 	
-name returns [name]	: ^(NAME AN_NAME) {$name = $AN_NAME.text}
+name returns [name]	: ^(NAME AN_NAME) {$name = $AN_NAME.text[3:].strip()}
 	;
 
 ceiling returns [ceiling]
