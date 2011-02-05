@@ -29,6 +29,10 @@ import math
 import pyproj
 import shapely.geometry
 
+import altiresolver
+
+altitude_resolver = altiresolver.OssimResolverWrapper("/media/e35706d4-062b-4652-8c53-0a853d4dcb3b/storage/unzipe/ossim_preferences_template")
+
 latlong = osgeo.osr.SpatialReference()
 ortho = osgeo.osr.SpatialReference()
 
@@ -366,3 +370,42 @@ def writeGeometriesToShapeFile(geometries, shapefile):
         feature.Destroy()
     shp.Destroy()
 
+
+def getCeilAtPoint(metazone, lon, lat):
+    ## missing AGL, ASFC, GND
+    metaceil = metazone['ceiling']
+
+    if 'flevel' in metaceil:
+        return metaceil['flevel'] * 100 / 0.3048
+    elif 'ref' in metaceil and metaceil['ref'] == 'SFC':
+        # not 100% true, as SFC is not at 0 MSL.
+        # approx valid when flying outside of a cave.
+        #
+        # /!\ does not really make sense to use SFC for the ceiling...
+        return 0
+    elif 'nolimit' in metaceil:
+        return sys.maxint
+    elif 'ref' in metaceil and metaceil['ref'] == 'AMSL':
+        return metaceil['basealti'] 
+    elif 'ref' in metaceil and metaceil['ref'] == "AGL":
+        ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
+        return metaceil['basealti'] + ground_level
+
+def getFloorAtPoint(metazone, lon, lat):
+    ## missing AGL, ASFC, GND
+    metafloor = metazone['floor']
+
+    if 'flevel' in metafloor:
+        return metafloor['flevel'] * 100 / 0.3048
+    elif 'ref' i metafloor and metafloor['ref'] == "SFC":
+        # not 100% true, as SFC is not at 0 MSL.
+        # approx valid when flying outside of a cave.
+        return 0
+    elif 'nolimit' in metafloor:
+        # does not make sense to use UNL as floor.
+        return sys.maxint
+    elif 'ref' in metafloor and metafloor['ref'] == "AMSL":
+        return metafloor['basealti']
+    elif 'ref' in metafloor and metafloor['ref'] == "AGL":
+        ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
+        return metafloor['basealti'] + ground_level
