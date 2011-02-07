@@ -27,6 +27,12 @@ oair_file returns [zones]
 	;
 	
 zone returns [zone_desc]
+scope{
+    direction
+}
+@init {
+ $zone::direction = "cw"
+}
 	: ^(ZONE aclass name ceiling floor ^(GEOMETRY geometry))
         {
             meta={'class': $aclass.aclass, 
@@ -93,8 +99,8 @@ single_point returns [point]
 	  }
 	;
 
-circle_direction returns [direction]
-	:  ('+' {$direction = "cw"}|'-' {$direction = "ccw"})
+circle_direction
+	:  ('+' {$zone::direction = "cw"}|'-' {$zone::direction = "ccw"})
 	;
 	
 circle_center  returns [spoint]
@@ -104,16 +110,13 @@ circle_center  returns [spoint]
 	;
 	
 circle_arc returns [points]
-@init{
- direction = "ccw"
-}
 	:  ^(CIRCLE_ARC circle_center c1=COORDS c2=COORDS 
-	       (circle_direction{direction=$circle_direction.direction})?)
+	       (circle_direction)?)
 {
  point1 = shapely.geometry.Point(airspace.util.rawLatLonConvToLonLat($c1.text))
  point2 = shapely.geometry.Point(airspace.util.rawLatLonConvToLonLat($c2.text))
  center = $circle_center.spoint
- $points = airspace.util.getArc2(center, point1, point2, direction)
+ $points = airspace.util.getArc2(center, point1, point2, $zone::direction)
 }
 	;
 	

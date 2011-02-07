@@ -43,8 +43,9 @@ geod_wgs84 = pyproj.Geod(ellps='WGS84')
 # needed for loading elevation data from GPX.
 # if not set, then elevation is not set (=>0)
 os.environ['GPX_ELE_AS_25D'] = 'YES'
+QUADSEG=90
 
-def getCircle2(center, radius, quadseg=90):
+def getCircle2(center, radius, quadseg=QUADSEG):
     """
     Returns a polygon object approximating a circle centered on
     'center' with a radius 'radius'. Radius in meters.
@@ -54,7 +55,7 @@ def getCircle2(center, radius, quadseg=90):
 
     return getCircleByPoints(center, shapely.geometry.Point(long2, lat2))
 
-def getCircleByPoints(center, point, quadseg=90):
+def getCircleByPoints(center, point, quadseg=QUADSEG):
     """
     Returns a polygon object approximating a circle centered on
     'center' with a radius 'radius'. Radius in meters.
@@ -94,16 +95,16 @@ def getArc2(center, point1, point2, direction="ccw"):
 
     if si > ei:
         if direction == "ccw":
-            points += [x for x in reversed(list(circle_ls)[ei:si+1])]
+            points += list(point1.coords) + [x for x in reversed(list(circle_ls)[ei+1:si])] + list(point2.coords)
         else:
-            points += list(circle_ls)[si:]
-            points += list(circle_ls)[:ei]
+            points += list(point1.coords) + list(circle_ls)[si+1:]
+            points += list(circle_ls)[:ei] + list(point2.coords)
     else: # si <= ei
         if direction == "ccw":
-            points += [x for x in reversed(list(circle_ls)[0:si+1])]
-            points += [x for x in reversed(list(circle_ls)[ei:])]
+            points += list(point1.coords) + [x for x in reversed(list(circle_ls)[0:si])] 
+            points += [x for x in reversed(list(circle_ls)[ei+1:])] + list(point2.coords)
         else:
-            points += list(circle_ls)[si:ei+1]
+            points += list(point1.coords) + list(circle_ls)[si+1:ei] + list(point2.coords)
 
     return points
     
