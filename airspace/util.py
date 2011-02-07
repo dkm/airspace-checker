@@ -263,7 +263,7 @@ def getFloorAtPoint(metazone, lon, lat):
 
     if 'flevel' in metafloor:
         return metafloor['flevel'] * 100 / 0.3048
-    elif 'ref' i metafloor and metafloor['ref'] == "SFC":
+    elif 'ref' in metafloor and metafloor['ref'] == "SFC":
         # not 100% true, as SFC is not at 0 MSL.
         # approx valid when flying outside of a cave.
         return 0
