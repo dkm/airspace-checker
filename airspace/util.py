@@ -93,13 +93,13 @@ def getArc2(center, point1, point2, direction="ccw"):
     si,ei = lp1_idx, lp2_idx
 
     if si > ei:
-        if direction != "ccw":
+        if direction == "ccw":
             points += [x for x in reversed(list(circle_ls)[ei:si+1])]
         else:
             points += list(circle_ls)[si:]
             points += list(circle_ls)[:ei]
     else: # si <= ei
-        if direction != "ccw":
+        if direction == "ccw":
             points += [x for x in reversed(list(circle_ls)[0:si+1])]
             points += [x for x in reversed(list(circle_ls)[ei:])]
         else:
