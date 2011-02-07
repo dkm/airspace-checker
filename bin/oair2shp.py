@@ -53,6 +53,13 @@ def main():
         print "Parser returned 0 zones, not writing anything."
     else:
         print "Found %d zones" %len(res)
+        
+        ok = True
+        for meta,zone in res:
+            if not zone.is_valid:
+                print meta['name'], " is not valid"
+                ok = False
+
         airspace.shp.writeToShp(args.shapefile, res)
 
 if __name__ == "__main__":
