@@ -19,6 +19,7 @@ tokens {
         CIRCLE;
         CIRCLE_ARC;
         NAME;
+        ALTIS;
 }
 
 FLEVEL	:	'FL' '0'..'9'+
@@ -82,10 +83,10 @@ aclass	:	'AC' (c='A'|c='C'|c='CTR'|c='D'|c='E'|c='GP'|c='P'|c='Q'|c='R'|c='W')
 name	:	AN_NAME -> ^(NAME AN_NAME)
 	;
 
-ceiling :	'AH'! altitude_specif
+ceiling :	'AH' altitude_specif+ -> ^(ALTIS altitude_specif+)
 	;
 
-floor	:	'AL'! altitude_specif
+floor	:	'AL' altitude_specif+ -> ^(ALTIS altitude_specif+)
 	;
 
 frag_alti

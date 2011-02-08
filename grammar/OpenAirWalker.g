@@ -40,6 +40,7 @@ scope{
                   'ceiling': $ceiling.ceiling,
                   'floor': $floor.floor
                   }
+            print $name.name
             $zone_desc = (meta, $geometry.polygon)
         }
 	;
@@ -52,11 +53,17 @@ name returns [name]	: ^(NAME AN_NAME) {$name = $AN_NAME.text[3:].strip()}
 	;
 
 ceiling returns [ceiling]
- 	: altitude_specif {$ceiling = $altitude_specif.altispecif}
+@init {
+    $ceiling = []
+}
+ 	: ^(ALTIS (altitude_specif {$ceiling.append($altitude_specif.altispecif)})+)
 	;
 
 floor returns [floor]
-    : altitude_specif {$floor = $altitude_specif.altispecif}
+@init{
+    $floor = []
+}
+    : ^(ALTIS (altitude_specif {$floor.append($altitude_specif.altispecif)})+)
 	;
 
 frag_alti returns [absalti]
