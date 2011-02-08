@@ -39,6 +39,11 @@ def main():
 
     zones = airspace.shp.loadFromShp(args.shapefile)
 
+    for m,z in zones:
+        if not z.is_valid:
+            print "NOT VALID:", m
+    sys.exit(-1)
+
     if zones:
         print "Loaded %s zones" % len(zones)
     else:
@@ -69,7 +74,7 @@ def main():
 
     for pot_zone,track in potential_zones:
         if track.intersects(pot_zone[1]):
-            inter_track = pot_zone[1].intersection(track)
+            inter_track = track.intersection(pot_zone[1])
             potential_zones2.append((pot_zone, track, inter_track))
     
     print "Found %d potential zone(s):" % len(potential_zones2)

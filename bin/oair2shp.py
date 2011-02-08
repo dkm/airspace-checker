@@ -49,6 +49,11 @@ def main():
                 return
 
     res = airspace.parser.parse(args.openair)
+
+    for meta,geometry in res:
+        if not geometry.is_valid:
+            print "NOT VALID:", meta
+
     if not res:
         print "Parser returned 0 zones, not writing anything."
     else:
