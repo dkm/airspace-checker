@@ -33,6 +33,8 @@ def main():
                         help='the output ESRI Shapefile base prefix')
     parser.add_argument('--force', action="store_true", default=False, 
                         help='overwrite output if it exists')
+    parser.add_argument('--fix', action="store_true", default=False, 
+                        help='try to fix incorrect geometries USE WITH CARE!!!')
 
     args = parser.parse_args()
 
@@ -50,22 +52,34 @@ def main():
 
     res = airspace.parser.parse(args.openair)
 
+    valid_res = []
     for meta,geometry in res:
         if not geometry.is_valid:
+            import shapely.wkt
             print "NOT VALID:", meta
+            test_geo = geometry.buffer(0.0000001)
 
-    if not res:
+            if args.fix and test_geo.is_valid:
+                print "replaced, ok"
+                valid_res.append((meta, test_geo))
+            else:
+                valid_res.append((meta,geometry))
+                print "not replaced."
+        else:
+            valid_res.append((meta,geometry))
+
+    if not valid_res:
         print "Parser returned 0 zones, not writing anything."
     else:
-        print "Found %d zones" %len(res)
+        print "Found %d zones" %len(valid_res)
         
         ok = True
-        for meta,zone in res:
+        for meta,zone in valid_res:
             if not zone.is_valid:
                 print meta['name'], " is not valid"
                 ok = False
 
-        airspace.shp.writeToShp(args.shapefile, res)
+        airspace.shp.writeToShp(args.shapefile, valid_res)
 
 if __name__ == "__main__":
     main()
