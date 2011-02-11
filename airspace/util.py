@@ -45,6 +45,13 @@ geod_wgs84 = pyproj.Geod(ellps='WGS84')
 os.environ['GPX_ELE_AS_25D'] = 'YES'
 QUADSEG=90
 
+
+
+class InvalidDataException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def getCircle2(center, radius, quadseg=QUADSEG):
     """
     Returns a polygon object approximating a circle centered on
@@ -79,8 +86,13 @@ def getCircleByPoints(center, point, quadseg=QUADSEG):
     return shapely.geometry.Polygon(cpoints)
 
 def getArc2(center, point1, point2, direction="ccw"):
-
     az1,az2,arc_radius = geod_wgs84.inv(point1.x, point1.y, center.x, center.y)
+    az1,az2,arc_radius2 = geod_wgs84.inv(point2.x, point2.y, center.x, center.y)
+
+    if arc_radius != arc_radius2:
+        print "WARNING, invalid arc (distances center/p1|p2 are not the same) ",
+##        raise InvalidDataException("%f / %f" %(arc_radius, arc_radius2))
+        
 
     radius = shapely.geometry.Point(point1).distance(shapely.geometry.Point(point2))
 
