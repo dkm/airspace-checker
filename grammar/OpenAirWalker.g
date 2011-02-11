@@ -28,12 +28,13 @@ oair_file returns [zones]
 	
 zone returns [zone_desc]
 scope{
-    direction
+    direction;
+    name
 }
 @init {
  $zone::direction = "cw"
 }
-	: ^(ZONE aclass name ceiling floor ^(GEOMETRY geometry))
+	: ^(ZONE aclass name{$zone::name=$name.name} ceiling floor ^(GEOMETRY geometry))
         {
             meta={'class': $aclass.aclass, 
                   'name': $name.name,
@@ -123,7 +124,12 @@ circle_arc returns [points]
  point1 = shapely.geometry.Point(airspace.util.rawLatLonConvToLonLat($c1.text))
  point2 = shapely.geometry.Point(airspace.util.rawLatLonConvToLonLat($c2.text))
  center = $circle_center.spoint
- $points = airspace.util.getArc2(center, point1, point2, $zone::direction)
+ try:
+     $points = airspace.util.getArc2(center, point1, point2, $zone::direction)
+ except airspace.util.InvalidDataException,e:
+     print e.message
+     print "in ", $zone::name
+     raise e
 }
 	;
 	
