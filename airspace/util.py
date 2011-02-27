@@ -31,6 +31,8 @@ import shapely.geometry
 
 import altiresolver
 
+DEBUG=False
+
 altitude_resolver = altiresolver.OssimResolverWrapper("/media/e35706d4-062b-4652-8c53-0a853d4dcb3b/storage/unzipe/ossim_preferences_template")
 
 latlong = osgeo.osr.SpatialReference()
@@ -45,7 +47,9 @@ geod_wgs84 = pyproj.Geod(ellps='WGS84')
 os.environ['GPX_ELE_AS_25D'] = 'YES'
 QUADSEG=90
 
-
+def debug_print(s):
+    if DEBUG:
+        print s
 
 class InvalidDataException(Exception):
     def __init__(self, message):
@@ -90,7 +94,7 @@ def getArc2(center, point1, point2, direction="ccw"):
     az1,az2,arc_radius2 = geod_wgs84.inv(point2.x, point2.y, center.x, center.y)
 
     if arc_radius != arc_radius2:
-        print "WARNING, invalid arc (distances center/p1|p2 are not the same) ",
+        debug_print("WARNING, invalid arc (distances center/p1|p2 are not the same) ")
 ##        raise InvalidDataException("%f / %f" %(arc_radius, arc_radius2))
         
 

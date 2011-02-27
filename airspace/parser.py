@@ -40,6 +40,7 @@ def parse(filename):
     nodes = antlr3.tree.CommonTreeNodeStream(tree)
     nodes.setTokenStream(tokens)
     walker = OpenAirWalker(nodes)
+    walker.debug = False
 
     res = walker.oair_file()
     return res

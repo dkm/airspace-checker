@@ -16,7 +16,9 @@ import airspace.util
 }
 
 @members {
-
+def debug_print(self, s):
+    if self.debug:
+        print s
 }
 
 oair_file returns [zones]
@@ -41,7 +43,7 @@ scope{
                   'ceiling': $ceiling.ceiling,
                   'floor': $floor.floor
                   }
-            print $name.name
+            self.debug_print($name.name)
             $zone_desc = (meta, $geometry.polygon)
         }
 	;
