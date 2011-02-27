@@ -35,6 +35,8 @@ def main():
                         help='overwrite output if it exists')
     parser.add_argument('--fix', action="store_true", default=False, 
                         help='try to fix incorrect geometries USE WITH CARE!!!')
+    parser.add_argument('--skip-invalid', action="store_true", default=False, 
+                        help='Skip invalid geometries.')
 
     args = parser.parse_args()
 
@@ -53,25 +55,33 @@ def main():
     res = airspace.parser.parse(args.openair)
 
     valid_res = []
+    skipped = []
+    print "Checking for validity"
     for meta,geometry in res:
         if not geometry.is_valid:
-            import shapely.wkt
             print "NOT VALID:", meta
-            test_geo = geometry.buffer(0.0000001)
 
-            if args.fix and test_geo.is_valid:
-                print "replaced, ok"
-                valid_res.append((meta, test_geo))
+            if args.skip_invalid:
+                skipped.append((meta,geometry))
             else:
-                valid_res.append((meta,geometry))
-                print "not replaced."
+                import shapely.wkt
+                test_geo = geometry.buffer(0.0000001)
+
+                if args.fix and test_geo.is_valid:
+                    print "replaced, ok"
+                    valid_res.append((meta, test_geo))
+                else:
+                    valid_res.append((meta,geometry))
+                    print "Invalid kept."
         else:
             valid_res.append((meta,geometry))
 
     if not valid_res:
         print "Parser returned 0 zones, not writing anything."
     else:
-        print "Found %d zones" %len(valid_res)
+        print "Found %d zones" %len(valid_res),
+        if skipped:
+            print", and skipped %d zones" %len(skipped)
         
         ok = True
         for meta,zone in valid_res:
