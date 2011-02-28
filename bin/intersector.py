@@ -42,7 +42,6 @@ def main():
     for m,z in zones:
         if not z.is_valid:
             print "NOT VALID:", m
-    sys.exit(-1)
 
     if zones:
         print "Loaded %s zones" % len(zones)
