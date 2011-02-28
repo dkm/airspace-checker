@@ -79,8 +79,24 @@ def main():
     print "Found %d potential zone(s):" % len(potential_zones2)
 
     for pot_z,t,it in potential_zones2:
+        import shapely.geometry.multilinestring
+        import shapely.geometry.linestring
         print " - %s" % pot_z[0]['name']
+
+        if isinstance(it, shapely.geometry.multilinestring.MultiLineString):
+            for it_ls in list(it):
+                for p in it_ls.coords:
+                    floor = airspace.util.getFloorAtPoint(pot_z[0], p[0], p[1])
+                    ceil = airspace.util.getCeilAtPoint(pot_z[0], p[0], p[1])
+                    print floor,ceil
+        elif isinstance(it, shapely.geometry.linestring.LineString):
+            for p in it.coords:
+                pass
+
+            
     
+    
+
     return 0
     
 

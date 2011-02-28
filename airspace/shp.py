@@ -21,6 +21,7 @@
 import osgeo.ogr
 import osgeo.osr
 
+import json
 import shapely.wkt
 
 def writeToShp(filename, zones):
@@ -39,11 +40,11 @@ def writeToShp(filename, zones):
     dstLayer.CreateField(fieldDef)
 
     fieldDef = osgeo.ogr.FieldDefn("CEILING", osgeo.ogr.OFTString)
-    fieldDef.SetWidth(30)
+    fieldDef.SetWidth(200)
     dstLayer.CreateField(fieldDef)
 
     fieldDef = osgeo.ogr.FieldDefn("FLOOR", osgeo.ogr.OFTString)
-    fieldDef.SetWidth(100)
+    fieldDef.SetWidth(200)
     dstLayer.CreateField(fieldDef)
 
     for meta,geometry in zones:
@@ -53,8 +54,8 @@ def writeToShp(filename, zones):
 
         feature.SetField("NAME", meta['name'].encode("iso-8859-15"))
         feature.SetField("CLASS", meta['class'].encode("iso-8859-15"))
-        feature.SetField("CEILING", meta['ceiling'])
-        feature.SetField("FLOOR", meta['floor'])
+        feature.SetField("CEILING", json.dumps(meta['ceiling']))
+        feature.SetField("FLOOR", json.dumps(meta['floor']))
         dstLayer.CreateFeature(feature)
 
         feature.Destroy()
@@ -80,8 +81,8 @@ def loadFromShp(shpfile):
         
         meta = {'name' : name,
                 'class': aclass,
-                'ceiling': ceiling,
-                'floor' : floor}
+                'ceiling': json.loads(ceiling),
+                'floor' : json.loads(floor)}
         sh_geometry = shapely.wkt.loads(geometry.ExportToWkt())
 
         zones.append((meta,sh_geometry))

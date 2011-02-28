@@ -256,39 +256,58 @@ def writeGeometriesToShapeFile(geometries, shapefile):
 
 def getCeilAtPoint(metazone, lon, lat):
     ## missing AGL, ASFC, GND
-    metaceil = metazone['ceiling']
+    metaceils = metazone['ceiling']
+    ceils = []
 
-    if 'flevel' in metaceil:
-        return metaceil['flevel'] * 100 / 0.3048
-    elif 'ref' in metaceil and metaceil['ref'] == 'SFC':
-        # not 100% true, as SFC is not at 0 MSL.
-        # approx valid when flying outside of a cave.
-        #
-        # /!\ does not really make sense to use SFC for the ceiling...
-        return 0
-    elif 'nolimit' in metaceil:
-        return sys.maxint
-    elif 'ref' in metaceil and metaceil['ref'] == 'AMSL':
-        return metaceil['basealti'] 
-    elif 'ref' in metaceil and metaceil['ref'] == "AGL":
-        ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
-        return metaceil['basealti'] + ground_level
+    for ceil_spec in metaceils:
+        if 'flevel' in ceil_spec:
+            return ceil_spec['flevel'] * 100 / 0.3048
+        elif 'ref' in ceil_spec and ceil_spec['ref'] == 'SFC':
+            # not 100% true, as SFC is not at 0 MSL.
+            # approx valid when flying outside of a cave.
+            #
+            # /!\ does not really make sense to use SFC for the ceiling...
+            return 0
+        elif 'nolimit' in ceil_spec:
+            ceils.append(sys.maxint)
+        elif 'ref' in ceil_spec and ceil_spec['ref'] == 'AMSL':
+            ceils.append(ceil_spec['basealti'])
+        elif 'ref' in ceil_spec and ceil_spec['ref'] == "AGL":
+            ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
+            ceils.append(ceil_spec['basealti'] + ground_level)
+        else:
+            print "FIXME, error"
+            print ceil_spec
+            print metazone
+            sys.exit(-1)
+
+    return min(ceils)
 
 def getFloorAtPoint(metazone, lon, lat):
     ## missing AGL, ASFC, GND
-    metafloor = metazone['floor']
+    metafloors = metazone['floor']
 
-    if 'flevel' in metafloor:
-        return metafloor['flevel'] * 100 / 0.3048
-    elif 'ref' in metafloor and metafloor['ref'] == "SFC":
-        # not 100% true, as SFC is not at 0 MSL.
-        # approx valid when flying outside of a cave.
-        return 0
-    elif 'nolimit' in metafloor:
-        # does not make sense to use UNL as floor.
-        return sys.maxint
-    elif 'ref' in metafloor and metafloor['ref'] == "AMSL":
-        return metafloor['basealti']
-    elif 'ref' in metafloor and metafloor['ref'] == "AGL":
-        ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
-        return metafloor['basealti'] + ground_level
+    floors = []
+    
+    for floor_spec in metafloors:
+        if 'flevel' in floor_spec:
+            floors.append(floor_spec['flevel'] * 100 / 0.3048)
+        elif 'ref' in floor_spec and floor_spec['ref'] == "SFC":
+            # not 100% true, as SFC is not at 0 MSL.
+            # approx valid when flying outside of a cave.
+            floors.append(0)
+        elif 'nolimit' in floor_spec:
+            # does not make sense to use UNL as floor.
+            floors.append(sys.maxint)
+        elif 'ref' in floor_spec and floor_spec['ref'] == "AMSL":
+            floors.append(floor_spec['basealti'])
+        elif 'ref' in floor_spec and floor_spec['ref'] == "AGL":
+            ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
+            floors.append(floor_spec['basealti'] + ground_level)
+        else:
+            print "FIXME, ERROR!"
+            print floor_spec
+            print metazone
+            sys.exit(-1)
+            
+    return max(floors)
