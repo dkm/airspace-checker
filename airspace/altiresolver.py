@@ -32,7 +32,7 @@ class OssimResolverProcess(AltiResolver):
     def __init__(self, ossim_config):
         self.config = ossim_config
 
-    def getGroundLevelAt(self, lat, lon):
+    def getGroundLevelAt(self, lon, lat):
         args = [OSSIM_HEIGHT_EXEC,
                 "-P", self.config,
                 str(lat), str(lon)]
@@ -58,11 +58,12 @@ class OssimResolverWrapper(AltiResolver):
 VALID_GN_SRC=("gtopo30", "astergdem")
 
 class GeoNamesResolver(AltiResolver):
-    def __init__(self, datasource="astergdem", debug=False, unit="foot"):
+    def __init__(self, datasource="astergdem", debug=False, unit="meter"):
         """
         Valid values for datasource are:
          * gtopo30
          * astergdem : uses gdem data (should be 1° precise, ~30m)
+        unit can be foot or meter (default)
         """
         if datasource not in VALID_GN_SRC:
             raise error.ASCException()
@@ -71,7 +72,7 @@ class GeoNamesResolver(AltiResolver):
         self.debug = debug
         self.datasource = datasource
 
-    def sendRequestForGroundLevel(self, datasource, lat, lon):
+    def sendRequestForGroundLevel(self, datasource, lon, lat):
         url = "http://ws.geonames.org/%s?lat=%f&lng=%f" % (datasource,
                                                            lat, lon)
         # this is very basic as a check that it is ok.
@@ -83,9 +84,9 @@ class GeoNamesResolver(AltiResolver):
             val = float(val_meters)
         return val
         
-    def getGroundLevelAt(self, lat, lon):
-        ret = self.sendRequestForGroundLevel(self.datasource, lat, lon)
+    def getGroundLevelAt(self, lon, lat):
+        ret = self.sendRequestForGroundLevel(self.datasource, lon, lat)
         if self.debug:
             for ds in VALID_GN_SRC:
-                print "[%s]=" %ds, self.sendRequestForGroundLevel(ds, lat, lon)
+                print "[%s]=" %ds, self.sendRequestForGroundLevel(ds, lon, lat)
         return ret
