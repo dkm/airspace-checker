@@ -261,13 +261,13 @@ def getCeilAtPoint(metazone, lon, lat):
 
     for ceil_spec in metaceils:
         if 'flevel' in ceil_spec:
-            return ceil_spec['flevel'] * 100 / 0.3048
+            ceils.append(ceil_spec['flevel'] * 100 * 0.3048)
         elif 'ref' in ceil_spec and ceil_spec['ref'] == 'SFC':
             # not 100% true, as SFC is not at 0 MSL.
             # approx valid when flying outside of a cave.
             #
             # /!\ does not really make sense to use SFC for the ceiling...
-            return 0
+            ceils.append(0)
         elif 'nolimit' in ceil_spec:
             ceils.append(sys.maxint)
         elif 'ref' in ceil_spec and ceil_spec['ref'] == 'AMSL':
@@ -291,7 +291,7 @@ def getFloorAtPoint(metazone, lon, lat):
     
     for floor_spec in metafloors:
         if 'flevel' in floor_spec:
-            floors.append(floor_spec['flevel'] * 100 / 0.3048)
+            floors.append(floor_spec['flevel'] * 100 * 0.3048)
         elif 'ref' in floor_spec and floor_spec['ref'] == "SFC":
             # not 100% true, as SFC is not at 0 MSL.
             # approx valid when flying outside of a cave.

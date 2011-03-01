@@ -70,7 +70,9 @@ def main():
         potential_zones += [(zones[i], track) for i in spatial_index.intersection(track.bounds)]
     
     print "Potential zones after first filter:", len(potential_zones)
-    
+    for pot_zone in potential_zones:
+        print "-", pot_zone[0][0]['name']
+
     potential_zones2 = []
 
     for pot_zone,track in potential_zones:
@@ -90,15 +92,15 @@ def main():
                 for p in it_ls.coords:
                     floor = airspace.util.getFloorAtPoint(pot_z[0], p[0], p[1])
                     ceil = airspace.util.getCeilAtPoint(pot_z[0], p[0], p[1])
-                    print floor,ceil
+                    if p[2] > floor and p[2] < ceil:
+                        print floor, "<", p[2], "<", ceil
         elif isinstance(it, shapely.geometry.linestring.LineString):
             for p in it.coords:
-                pass
-
-            
-    
-    
-
+                floor = airspace.util.getFloorAtPoint(pot_z[0], p[0], p[1])
+                ceil = airspace.util.getCeilAtPoint(pot_z[0], p[0], p[1])
+                if p[2] > floor and p[2] < ceil:
+                    print floor, "<", p[2], "<", ceil
+                
     return 0
     
 
