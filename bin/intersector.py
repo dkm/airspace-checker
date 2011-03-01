@@ -54,6 +54,8 @@ def main():
     if not tracks:
         print "Could not load any track, exiting"
         return -1
+    else:
+        print "Loaded %d track(s)" % len(tracks)
 
     spatial_index = rtree.Rtree()
 
