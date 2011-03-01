@@ -281,7 +281,7 @@ def getCeilAtPoint(metazone, lon, lat):
             print metazone
             sys.exit(-1)
 
-    return min(ceils)
+        return max(ceils)
 
 def getFloorAtPoint(metazone, lon, lat):
     ## missing AGL, ASFC, GND
