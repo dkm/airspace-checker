@@ -81,11 +81,13 @@ def main():
             potential_zones2.append((pot_zone, track, inter_track))
     
     print "Found %d potential zone(s):" % len(potential_zones2)
+    
+    confirmed_zones = []
 
     for pot_z,t,it in potential_zones2:
+        confirmed = False
         import shapely.geometry.multilinestring
         import shapely.geometry.linestring
-        print " - %s" % pot_z[0]['name']
 
         if isinstance(it, shapely.geometry.multilinestring.MultiLineString):
             for it_ls in list(it):
@@ -93,14 +95,25 @@ def main():
                     floor = airspace.util.getFloorAtPoint(pot_z[0], p[0], p[1])
                     ceil = airspace.util.getCeilAtPoint(pot_z[0], p[0], p[1])
                     if p[2] > floor and p[2] < ceil:
-                        print floor, "<", p[2], "<", ceil
+                        ## print floor, "<", p[2], "<", ceil
+                        if not confirmed:
+                            confirmed_zones.append(pot_z)
+                            confirmed = True
+                        
         elif isinstance(it, shapely.geometry.linestring.LineString):
             for p in it.coords:
                 floor = airspace.util.getFloorAtPoint(pot_z[0], p[0], p[1])
                 ceil = airspace.util.getCeilAtPoint(pot_z[0], p[0], p[1])
                 if p[2] > floor and p[2] < ceil:
-                    print floor, "<", p[2], "<", ceil
-                
+                    ## print floor, "<", p[2], "<", ceil
+                    if not confirmed:
+                        confirmed_zones.append(pot_z)
+                        confirmed = True
+
+    print "Confirmed zone(s) :", len(confirmed_zones)
+    for conf_zone in confirmed_zones:
+        print "-", conf_zone[0]['name']
+
     return 0
     
 
