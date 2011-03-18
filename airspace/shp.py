@@ -23,6 +23,7 @@ import osgeo.osr
 
 import json
 import shapely.wkt
+import airspace 
 
 def writeToShp(filename, zones):
     spatialRef = osgeo.osr.SpatialReference()
@@ -47,13 +48,15 @@ def writeToShp(filename, zones):
     fieldDef.SetWidth(200)
     dstLayer.CreateField(fieldDef)
 
-    for meta,geometry in zones:
+    for z in zones:
+        meta,geometry = z.meta, z.geometry
+
         buf = osgeo.ogr.CreateGeometryFromWkt(shapely.wkt.dumps(geometry))
         feature = osgeo.ogr.Feature(dstLayer.GetLayerDefn())
         feature.SetGeometry(buf)
 
-        feature.SetField("NAME", meta['name'].encode("iso-8859-15"))
-        feature.SetField("CLASS", meta['class'].encode("iso-8859-15"))
+        feature.SetField("NAME", meta['name'].encode("utf-8"))
+        feature.SetField("CLASS", meta['class'].encode("utf-8"))
         feature.SetField("CEILING", json.dumps(meta['ceiling']))
         feature.SetField("FLOOR", json.dumps(meta['floor']))
         dstLayer.CreateFeature(feature)
@@ -85,6 +88,6 @@ def loadFromShp(shpfile):
                 'floor' : json.loads(floor)}
         sh_geometry = shapely.wkt.loads(geometry.ExportToWkt())
 
-        zones.append((meta,sh_geometry))
+        zones.append(airspace.Zone(meta,sh_geometry))
     return zones
 

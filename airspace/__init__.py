@@ -16,3 +16,16 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+class Zone:
+    def __init__(self, meta, geometry):
+        self.meta = meta
+        self.geometry = geometry
+
+    @property
+    def __geo_interface__(self):
+        f = {'type': 'Feature',
+             'properties': self.meta, 
+             'geometry': self.geometry}
+        return f

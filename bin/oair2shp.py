@@ -57,24 +57,25 @@ def main():
     valid_res = []
     skipped = []
     print "Checking for validity"
-    for meta,geometry in res:
+    for r in res:
+        meta,geometry = r.meta, r.geometry
         if not geometry.is_valid:
             print "NOT VALID:", meta
 
             if args.skip_invalid:
-                skipped.append((meta,geometry))
+                skipped.append(r)
             else:
                 import shapely.wkt
                 test_geo = geometry.buffer(0.0000001)
 
                 if args.fix and test_geo.is_valid:
                     print "replaced, ok"
-                    valid_res.append((meta, test_geo))
+                    valid_res.append(airspace.Zone(meta, test_geo))
                 else:
-                    valid_res.append((meta,geometry))
+                    valid_res.append(r)
                     print "Invalid kept."
         else:
-            valid_res.append((meta,geometry))
+            valid_res.append(r)
 
     if not valid_res:
         print "Parser returned 0 zones, not writing anything."
@@ -84,7 +85,8 @@ def main():
             print", and skipped %d zones" %len(skipped)
         
         ok = True
-        for meta,zone in valid_res:
+        for r in valid_res:
+            meta,zone = r.meta,r.geometry
             if not zone.is_valid:
                 print meta['name'], " is not valid"
                 ok = False

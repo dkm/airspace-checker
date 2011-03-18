@@ -21,7 +21,7 @@ import sys
 import airspace
 import airspace.shp
 import geojson
-
+import pprint
 import argparse
 
 
@@ -40,9 +40,9 @@ def main():
 
     zones = airspace.shp.loadFromShp(args.shapefile)
 
-    for m,z in zones:
-        if not z.is_valid:
-            print "NOT VALID:", m
+    for z in zones:
+        if not z.geometry.is_valid:
+            print "NOT VALID:", z.meta
 
     if zones:
         print "Loaded %s zones" % len(zones)
@@ -50,10 +50,19 @@ def main():
         print "No zone loaded, exiting..."
         return -1
 
-    zs = [geojson.dumps(z[1]) for z in zones]
+
+    zs = geojson.FeatureCollection(zones)
+
+#     for i,z in enumerate(zs['geometries']):
+#         print zones[i][0]["name"]
+#         print z
+#         z["name"] = zones[i][0]["name"]
+# ##    zs = geojson.GeometryCollection(gjzs)
 
     fout = open(args.output, "w")
-    print >>fout, zs
+
+    print >> fout, "var spaces = " + geojson.dumps(zs)
+
     fout.close()
     return 0
     

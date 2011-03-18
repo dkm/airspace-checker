@@ -13,6 +13,7 @@ options {
 @header {
 import shapely.geometry
 import airspace.util
+import airspace
 }
 
 @members {
@@ -44,7 +45,7 @@ scope{
                   'floor': $floor.floor
                   }
             self.debug_print($name.name)
-            $zone_desc = (meta, $geometry.polygon)
+            $zone_desc = airspace.Zone(meta, $geometry.polygon)
         }
 	;
 
