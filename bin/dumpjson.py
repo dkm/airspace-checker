@@ -56,10 +56,19 @@ def main():
 
     if not args.split_class:
         zs = geojson.FeatureCollection(zones)
-        print >> fout, "var spaces = " + geojson.dumps(zs)
+        print >> fout, "var spaces = " + geojson.dumps(zs) + ';\n'
     else:
-        pass
-            
+        splitz = {}
+        print >>fout, 'var spaces = new Array();\n'
+
+        for z in zones:
+            c = z.meta['class']
+            lc = splitz.get(c, [])
+            lc.append(z)
+            splitz[c] = lc
+        for i,c in enumerate(splitz):
+            zs = geojson.FeatureCollection(splitz[c])
+            print >> fout, "spaces[%d] = " %i + geojson.dumps(zs) + ';\n'
 
     fout.close()
     return 0
