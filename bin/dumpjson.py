@@ -31,7 +31,8 @@ def main():
     parser.add_argument('--shapefile', metavar='SHP', type=str, 
                         help='airspace data as ESRI Shapefile',
                         required=True)
-
+    parser.add_argument('--split-class', action="store_true", default=True, 
+                        help='Split zones wrt. class.')
     parser.add_argument('--output', metavar='GeoJSON', type=str, 
                         help='Output GeoJSON',
                         required=True)
@@ -51,17 +52,14 @@ def main():
         return -1
 
 
-    zs = geojson.FeatureCollection(zones)
-
-#     for i,z in enumerate(zs['geometries']):
-#         print zones[i][0]["name"]
-#         print z
-#         z["name"] = zones[i][0]["name"]
-# ##    zs = geojson.GeometryCollection(gjzs)
-
     fout = open(args.output, "w")
 
-    print >> fout, "var spaces = " + geojson.dumps(zs)
+    if not args.split_class:
+        zs = geojson.FeatureCollection(zones)
+        print >> fout, "var spaces = " + geojson.dumps(zs)
+    else:
+        pass
+            
 
     fout.close()
     return 0
