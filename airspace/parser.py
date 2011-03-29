@@ -25,7 +25,7 @@ from OpenAirWalker import OpenAirWalker
 
 def parse(filename):
     finput = open(filename)
-    linput = finput.read().decode('latin-1')
+    linput = finput.read().decode('utf-8')
 
     char_stream = antlr3.ANTLRStringStream(linput)
 
