@@ -24,6 +24,7 @@ import airspace.track
 import rtree
 import airspace.altiresolver
 import argparse
+import geojson
 
 def main():
     parser = argparse.ArgumentParser(description='Check airspace.')
@@ -40,6 +41,10 @@ def main():
 
     parser.add_argument('--altiresolver-ossim-config', metavar='FILE', type=str, 
                         help='Config file path for ossim mode',
+                        required=False)
+    
+    parser.add_argument('--dumpjson', metavar='FILE', type=str, 
+                        help='dump intersecting data as GeoJSON in FILE',
                         required=False)
 
     args = parser.parse_args()
@@ -97,49 +102,83 @@ def main():
     for pot_zone in potential_zones:
         print "-", pot_zone[0].meta['name']
 
-    potential_zones2 = []
+    potential_zones2 = {}
 
     for pot_zone,track in potential_zones:
         if track.intersects(pot_zone.geometry):
             inter_track = track.intersection(pot_zone.geometry)
-            potential_zones2.append((pot_zone, track, inter_track))
+            inters = potential_zones2.get(pot_zone, [])
+            inters.append(inter_track)
+            potential_zones2[pot_zone] = inters
     
     print "Found %d potential zone(s):" % len(potential_zones2)
-    
-    confirmed_zones = []
 
-    for pot_z,t,it in potential_zones2:
+    for p in potential_zones2:
+        print "-", p.meta['name']
+
+    confirmed_zones = {}
+
+    for pot_z in potential_zones2:
         confirmed = False
         import shapely.geometry.multilinestring
         import shapely.geometry.linestring
 
-        if isinstance(it, shapely.geometry.multilinestring.MultiLineString):
-            for it_ls in list(it):
-                for p in it_ls.coords:
+        for it in potential_zones2[pot_z]:
+            if isinstance(it, shapely.geometry.multilinestring.MultiLineString):
+                for it_ls in list(it):
+                    new_inter_coords = []
+                    for p in it_ls.coords:
+                        floor = airspace.util.getFloorAtPoint(altir, pot_z.meta, p[0], p[1])
+                        ceil = airspace.util.getCeilAtPoint(altir, pot_z.meta, p[0], p[1])
+                        if p[2] > floor and p[2] < ceil:
+                            new_inter_coords.append(p)
+                        elif new_inter_coords:
+                            l = confirmed_zones.get(pot_z,[])
+                            l.append(new_inter_coords)
+                            confirmed_zones[pot_z] = l
+                            new_inter_coords = []
+                        ## print floor, "<", p[2], "<", ceil
+                            # if not confirmed:
+                            #     confirmed_zones.append(pot_z)
+                            #     confirmed = True
+                        
+            elif isinstance(it, shapely.geometry.linestring.LineString):
+                new_inter_coords = []
+                for p in it.coords:
                     floor = airspace.util.getFloorAtPoint(altir, pot_z.meta, p[0], p[1])
                     ceil = airspace.util.getCeilAtPoint(altir, pot_z.meta, p[0], p[1])
-                    if p[2] > floor and p[2] < ceil:
-                        ## print floor, "<", p[2], "<", ceil
-                        if not confirmed:
-                            confirmed_zones.append(pot_z)
-                            confirmed = True
-                        
-        elif isinstance(it, shapely.geometry.linestring.LineString):
-            for p in it.coords:
-                floor = airspace.util.getFloorAtPoint(altir, pot_z.meta, p[0], p[1])
-                ceil = airspace.util.getCeilAtPoint(altir, pot_z.meta, p[0], p[1])
-                if p[2] > floor and p[2] < ceil:
-                    ## print floor, "<", p[2], "<", ceil
-                    if not confirmed:
-                        confirmed_zones.append(pot_z)
-                        confirmed = True
 
-    print "Confirmed zone(s) :", len(confirmed_zones)
+                    if p[2] > floor and p[2] < ceil:
+                        new_inter_coords.append(p)
+                    elif new_inter_coords:
+                        l = confirmed_zones.get(pot_z,[])
+                        l.append(new_inter_coords)
+                        confirmed_zones[pot_z] = l
+                        new_inter_coords = []
+
+                    ## print floor, "<", p[2], "<", ceil
+                        # if not confirmed:
+                        #     confirmed_zones.append(pot_z)
+                        #     confirmed = True
+
+    intersections = []
+    for z in confirmed_zones:
+        i = airspace.Intersection(z, shapely.geometry.multilinestring.MultiLineString(confirmed_zones[z]))
+        intersections.append(i)
+
+    print "Confirmed zone(s) :", len(confirmed_zones), len(intersections)
     for conf_zone in confirmed_zones:
         print "-", conf_zone.meta['name']
 
+    if args.dumpjson:
+        fout = open(args.dumpjson, "w")
+        izs = geojson.GeometryCollection(intersections)
+        print >> fout, "var intersections = " + geojson.dumps(izs) + ';\n'
+        fout.close()
+
     return 0
-    
+
+
 
 if __name__ == "__main__":
     main()

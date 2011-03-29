@@ -29,3 +29,15 @@ class Zone:
              'properties': self.meta, 
              'geometry': self.geometry}
         return f
+
+class Intersection:
+    def __init__(self, zone, tracks):
+        self.zone = zone
+        self.tracks = tracks
+
+    @property
+    def __geo_interface__(self):
+        f= {'type' : 'GeometryCollection',
+            'geometries' : [self.zone, self.tracks]
+            }
+        return f
