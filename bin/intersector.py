@@ -170,6 +170,7 @@ def main():
     for conf_zone in confirmed_zones:
         print "-", conf_zone.meta['name']
 
+    # if we asked for GeoJSON dump
     if args.dumpjson:
         fout = open(args.dumpjson, "w")
         izs = geojson.GeometryCollection(intersections)
@@ -177,8 +178,6 @@ def main():
         fout.close()
 
     return 0
-
-
 
 if __name__ == "__main__":
     main()
