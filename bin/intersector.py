@@ -39,9 +39,9 @@ def main():
 
     zones = airspace.shp.loadFromShp(args.shapefile)
 
-    for m,z in zones:
-        if not z.is_valid:
-            print "NOT VALID:", m
+    for z in zones:
+        if not z.geometry.is_valid:
+            print "NOT VALID:", z.meta
 
     if zones:
         print "Loaded %s zones" % len(zones)
@@ -61,7 +61,7 @@ def main():
 
     # build spatial index for airspaces
     for idx,zone in enumerate(zones):
-        bbox = zone[1].bounds
+        bbox = zone.geometry.bounds
         spatial_index.add(idx, bbox)
     
     # first filtering wrt. spatial index
@@ -71,13 +71,13 @@ def main():
     
     print "Potential zones after first filter:", len(potential_zones)
     for pot_zone in potential_zones:
-        print "-", pot_zone[0][0]['name']
+        print "-", pot_zone[0].meta['name']
 
     potential_zones2 = []
 
     for pot_zone,track in potential_zones:
-        if track.intersects(pot_zone[1]):
-            inter_track = track.intersection(pot_zone[1])
+        if track.intersects(pot_zone.geometry):
+            inter_track = track.intersection(pot_zone.geometry)
             potential_zones2.append((pot_zone, track, inter_track))
     
     print "Found %d potential zone(s):" % len(potential_zones2)
@@ -92,8 +92,8 @@ def main():
         if isinstance(it, shapely.geometry.multilinestring.MultiLineString):
             for it_ls in list(it):
                 for p in it_ls.coords:
-                    floor = airspace.util.getFloorAtPoint(pot_z[0], p[0], p[1])
-                    ceil = airspace.util.getCeilAtPoint(pot_z[0], p[0], p[1])
+                    floor = airspace.util.getFloorAtPoint(pot_z.meta, p[0], p[1])
+                    ceil = airspace.util.getCeilAtPoint(pot_z.meta, p[0], p[1])
                     if p[2] > floor and p[2] < ceil:
                         ## print floor, "<", p[2], "<", ceil
                         if not confirmed:
@@ -102,8 +102,8 @@ def main():
                         
         elif isinstance(it, shapely.geometry.linestring.LineString):
             for p in it.coords:
-                floor = airspace.util.getFloorAtPoint(pot_z[0], p[0], p[1])
-                ceil = airspace.util.getCeilAtPoint(pot_z[0], p[0], p[1])
+                floor = airspace.util.getFloorAtPoint(pot_z.meta, p[0], p[1])
+                ceil = airspace.util.getCeilAtPoint(pot_z.meta, p[0], p[1])
                 if p[2] > floor and p[2] < ceil:
                     ## print floor, "<", p[2], "<", ceil
                     if not confirmed:
@@ -112,7 +112,7 @@ def main():
 
     print "Confirmed zone(s) :", len(confirmed_zones)
     for conf_zone in confirmed_zones:
-        print "-", conf_zone[0]['name']
+        print "-", conf_zone.meta['name']
 
     return 0
     
