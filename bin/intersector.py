@@ -22,9 +22,8 @@ import airspace
 import airspace.shp
 import airspace.track
 import rtree
-
+import airspace.altiresolver
 import argparse
-
 
 def main():
     parser = argparse.ArgumentParser(description='Check airspace.')
@@ -35,9 +34,34 @@ def main():
                         help='airspace data as ESRI Shapefile',
                         required=True)
 
+    parser.add_argument('--altiresolver', metavar='MODE', type=str, 
+                        help='Altitude resolver mode (ossim, geonames, random)',
+                        required=True)
+
+    parser.add_argument('--altiresolver-ossim-config', metavar='FILE', type=str, 
+                        help='Config file path for ossim mode',
+                        required=False)
+
     args = parser.parse_args()
 
     zones = airspace.shp.loadFromShp(args.shapefile)
+    
+    altir = None
+
+    if args.altiresolver == "ossim":
+        if args.altiresolver_ossim_config:
+            # "/home/marc/SRTM/unzipe/ossim_preferences_template"
+            altir = airspace.altiresolver.OssimResolverWrapper(args.altiresolver_ossim_config)
+        else:
+            print "Missing config file for ossim"
+            return -1
+    elif args.altiresolver == "geonames":
+        altir = airspace.altiresolver.GeoNamesResolver()
+    elif args.altiresolver == "random":
+        altir = airspace.altiresolver.RandomResolver()
+    else:
+        print "Incorrect altitude resolver mode ", args.altiresolver 
+        return -1
 
     for z in zones:
         if not z.geometry.is_valid:
@@ -92,8 +116,8 @@ def main():
         if isinstance(it, shapely.geometry.multilinestring.MultiLineString):
             for it_ls in list(it):
                 for p in it_ls.coords:
-                    floor = airspace.util.getFloorAtPoint(pot_z.meta, p[0], p[1])
-                    ceil = airspace.util.getCeilAtPoint(pot_z.meta, p[0], p[1])
+                    floor = airspace.util.getFloorAtPoint(altir, pot_z.meta, p[0], p[1])
+                    ceil = airspace.util.getCeilAtPoint(altir, pot_z.meta, p[0], p[1])
                     if p[2] > floor and p[2] < ceil:
                         ## print floor, "<", p[2], "<", ceil
                         if not confirmed:
@@ -102,8 +126,8 @@ def main():
                         
         elif isinstance(it, shapely.geometry.linestring.LineString):
             for p in it.coords:
-                floor = airspace.util.getFloorAtPoint(pot_z.meta, p[0], p[1])
-                ceil = airspace.util.getCeilAtPoint(pot_z.meta, p[0], p[1])
+                floor = airspace.util.getFloorAtPoint(altir, pot_z.meta, p[0], p[1])
+                ceil = airspace.util.getCeilAtPoint(altir, pot_z.meta, p[0], p[1])
                 if p[2] > floor and p[2] < ceil:
                     ## print floor, "<", p[2], "<", ceil
                     if not confirmed:

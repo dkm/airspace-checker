@@ -33,7 +33,6 @@ import altiresolver
 
 DEBUG=False
 
-altitude_resolver = altiresolver.OssimResolverWrapper("/media/e35706d4-062b-4652-8c53-0a853d4dcb3b/storage/unzipe/ossim_preferences_template")
 
 latlong = osgeo.osr.SpatialReference()
 ortho = osgeo.osr.SpatialReference()
@@ -254,7 +253,7 @@ def writeGeometriesToShapeFile(geometries, shapefile):
     shp.Destroy()
 
 
-def getCeilAtPoint(metazone, lon, lat):
+def getCeilAtPoint(altir, metazone, lon, lat):
     ## missing AGL, ASFC, GND
     metaceils = metazone['ceiling']
     ceils = []
@@ -273,7 +272,7 @@ def getCeilAtPoint(metazone, lon, lat):
         elif 'ref' in ceil_spec and ceil_spec['ref'] == 'AMSL':
             ceils.append(ceil_spec['basealti'])
         elif 'ref' in ceil_spec and ceil_spec['ref'] == "AGL":
-            ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
+            ground_level = altir.getGroundLevelAt(lat,lon)
             ceils.append(ceil_spec['basealti'] + ground_level)
         else:
             print "FIXME, error"
@@ -283,7 +282,7 @@ def getCeilAtPoint(metazone, lon, lat):
 
         return max(ceils)
 
-def getFloorAtPoint(metazone, lon, lat):
+def getFloorAtPoint(altir, metazone, lon, lat):
     ## missing AGL, ASFC, GND
     metafloors = metazone['floor']
 
@@ -302,7 +301,7 @@ def getFloorAtPoint(metazone, lon, lat):
         elif 'ref' in floor_spec and floor_spec['ref'] == "AMSL":
             floors.append(floor_spec['basealti'])
         elif 'ref' in floor_spec and floor_spec['ref'] == "AGL":
-            ground_level = altitude_resolver.getGroundLevelAt(lat,lon)
+            ground_level = altir.getGroundLevelAt(lat,lon)
             floors.append(floor_spec['basealti'] + ground_level)
         else:
             print "FIXME, ERROR!"

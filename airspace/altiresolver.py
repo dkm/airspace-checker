@@ -28,6 +28,25 @@ class AltiResolver:
 
 OSSIM_HEIGHT_EXEC="/usr/bin/ossim-height"
 
+import random
+
+class RandomResolver(AltiResolver):
+    def __init__(self, amin=0, amax=5000, var=10):
+
+
+        self.amin = amin
+        self.amax = amax
+        self.var = var
+        self._last = amin
+
+    def getGroundLevelAt(self, lon, lat):
+        self._last += random.randint(-self.var, self.var)
+        if self._last > self.amin:
+            self._last = self.amin
+        elif self._last > self.amax:
+            self._last = self.amax
+        return self._last
+
 class OssimResolverProcess(AltiResolver):
     def __init__(self, ossim_config):
         self.config = ossim_config
@@ -41,7 +60,6 @@ class OssimResolverProcess(AltiResolver):
         for l in p.stdout.xreadlines():
             if l.startswith("Height above MSL:"):
                 return float(l.strip().split(':')[1].strip())
-
 
 class OssimResolverWrapper(AltiResolver):
     def __init__(self, ossim_config):
