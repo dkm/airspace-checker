@@ -49,12 +49,9 @@ class Intersection:
     @property
     def __geo_interface__(self):
 
-        igeos = {'type': 'GeometryCollection',
-                 'geometries': self.tracks}
-        
         inters = {'type': 'Feature',
                   'properties': {},
-                  'geometry': igeos}
+                  'geometry': self.tracks}
         f = {'type': 'FeatureCollection',
              'features' : [self.zone, inters]}
 
