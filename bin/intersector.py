@@ -173,9 +173,10 @@ def main():
     # if we asked for GeoJSON dump
     if args.dumpjson:
         fout = open(args.dumpjson, "w")
-        izs = geojson.GeometryCollection(intersections)
-        print >> fout, "var intersections = " + geojson.dumps(izs) + ';\n'
+        iarray = '[' + ",\n".join([geojson.dumps(i) for i in intersections]) + '\n]'
+        print >> fout, "var intersections = " + iarray + ';\n'
         fout.close()
+
 
     return 0
 
