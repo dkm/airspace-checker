@@ -2,9 +2,9 @@
   <head> 
     <title>Vector Formats</title> 
     <script src="OpenLayers.js"></script> 
-    <script src="jquery-1.5.1.js"></script>
+    <script src="js/jquery-1.5.1.js"></script>
     <script src="split.json" type="text/javascript"></script>
-    <script src="airspace.js" type="text/javascript"></script>
+    <script src="js/airspace.js" type="text/javascript"></script>
 
     <link rel="stylesheet" href="style2.css" type="text/css"> 
     <link rel="stylesheet" href="style.css" type="text/css"> 
@@ -14,10 +14,14 @@
         <div id="map" class="smallmap"></div> 
 	<div id="highlighted"></div>
 	<div id="info"></div>
+	<form id="interload">
+	  Inter: <input type="text" id="interurl" name="interurl" /> <br />
+	  <input type="submit" name="load" />
+	</form>
+
 	<script defer="defer" type="text/javascript">
         var map = new OpenLayers.Map('map');
 
-	var geojsonloader = new OpenLayers.Format.GeoJSON();
         var wms = new OpenLayers.Layer.WMS( "OpenLayers WMS",
             "http://vmap0.tiles.osgeo.org/wms/vmap0", {layers: 'basic'} );
 
@@ -29,6 +33,14 @@
 	map.addControl(new OpenLayers.Control.LayerSwitcher());
         map.setCenter(new OpenLayers.LonLat(0, 0), 1);
 
+	$('#interload').submit(function() {
+	   $.getJSON($('#interurl').val(), function(data){
+	      $.each(data, function(index, inter) {
+	           displayIntersection(map, inter);
+	      });
+	   });
+	   return false;
+	});
 
       </script>
  </body> 
