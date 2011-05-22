@@ -131,7 +131,7 @@ def main():
                         floor = airspace.util.getFloorAtPoint(altir, pot_z.meta, p[0], p[1])
                         ceil = airspace.util.getCeilAtPoint(altir, pot_z.meta, p[0], p[1])
                         if p[2] > floor and p[2] < ceil:
-                            new_inter_coords.append(p)
+                            new_inter_coords.append((p[0], p[1]))
                         elif new_inter_coords:
                             l = confirmed_zones.get(pot_z,[])
                             l.append(new_inter_coords)
@@ -149,7 +149,7 @@ def main():
                     ceil = airspace.util.getCeilAtPoint(altir, pot_z.meta, p[0], p[1])
 
                     if p[2] > floor and p[2] < ceil:
-                        new_inter_coords.append(p)
+                        new_inter_coords.append((p[0], p[1]))
                     elif new_inter_coords:
                         l = confirmed_zones.get(pot_z,[])
                         l.append(new_inter_coords)
@@ -173,8 +173,8 @@ def main():
     # if we asked for GeoJSON dump
     if args.dumpjson:
         fout = open(args.dumpjson, "w")
-        izs = geojson.GeometryCollection(intersections)
-        print >> fout, "var intersections = " + geojson.dumps(izs) + ';\n'
+        iarray = '[' + ",\n".join([geojson.dumps(i) for i in intersections]) + '\n]\n'
+        print >> fout, iarray;
         fout.close()
 
     return 0

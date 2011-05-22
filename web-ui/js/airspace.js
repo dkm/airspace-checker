@@ -15,6 +15,16 @@
  //   You should have received a copy of the GNU General Public License
  //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+var geojsonloader = new OpenLayers.Format.GeoJSON();
+var inter_vectors = new OpenLayers.Layer.Vector("INTERSECTION");
+
+
+function displayIntersection(map, intersection) {
+  var features = geojsonloader.read(intersection);
+  inter_vectors.addFeatures(features);
+  map.addLayers([inter_vectors]);
+}
+
 function displayAirspace(map, aspaces){
             var report = function(e) {
 	        if(e['feature']['attributes'].hasOwnProperty('name')){
