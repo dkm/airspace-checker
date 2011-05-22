@@ -146,13 +146,14 @@ circle_arc returns [points]
      raise e
 }
 	;
-	
+
+// beware of units: radius in Nautical Mile. 1NM = 1,852km
 circle returns [polygon]
 @init{
 r=None
 }
 	: 
 	   ^(CIRCLE circle_center (INT{r = float($INT.text)} | FLOAT {r = float($FLOAT.text)})){
-	     $polygon = airspace.util.getCircle2($circle_center.spoint, r*1000)
+	     $polygon = airspace.util.getCircle2($circle_center.spoint, r*1852)
 	   }
 	;
