@@ -19,11 +19,11 @@
 
 
 class Zone:
-"""
-A Zone objects describes an aerial zone.
-The meta attribute contains meta data (name, class, ceiling/floor).
-The Zone class has geointerface.
-"""
+    """
+    A Zone objects describes an aerial zone.
+    The meta attribute contains meta data (name, class, ceiling/floor).
+    The Zone class has geointerface.
+    """
     def __init__(self, meta, geometry):
         self.meta = meta
         self.geometry = geometry
@@ -36,12 +36,12 @@ The Zone class has geointerface.
         return f
 
 class Intersection:
-"""
-Stores information on intersections related to a zone.
-The zone object must be of Zone type.
-The tracks must be of MultiLineString from shapely.
-Intersection has geointerface.
-"""
+    """
+    Stores information on intersections related to a zone.
+    The zone object must be of Zone type.
+    The tracks must be of MultiLineString from shapely.
+    Intersection has geointerface.
+    """
     def __init__(self, zone, tracks):
         self.zone = zone
         self.tracks = tracks
