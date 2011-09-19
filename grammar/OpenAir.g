@@ -95,11 +95,12 @@ frag_alti
  	
 altitude_specif
 	:
-	  (frag_alti (r='AGL'|r='AMSL'|r='SFC'|r='ASFC')) -> ^(ALTI frag_alti $r)
-	| (frag_alti? 'SFC') -> ^(ALTI frag_alti? 'SFC')
-	| FLEVEL -> ^(ALTI FLEVEL)
-	| 'UNL' -> ^(ALTI 'UNL')
-    | 'GND' -> ^(ALTI 'GND')
+      frag_alti ('AGL'| 'ASFC') -> ^(ALTI frag_alti 'AGL')
+    | frag_alti ('AMSL'|'ASL')  -> ^(ALTI frag_alti 'AMSL')
+	| 'SFC'                     -> ^(ALTI 'SFC')
+	| FLEVEL                    -> ^(ALTI FLEVEL)
+	| 'UNL'                     -> ^(ALTI 'UNL')
+    | ('GND'|'SFC')             -> ^(ALTI 'SFC')
 	;
 	
 geometry

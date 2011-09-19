@@ -82,23 +82,22 @@ floor returns [floor]
 	;
 
 frag_alti returns [absalti]
-	: ^(BASE_ALTI INT{$absalti=float($INT.text)} ('F'{$absalti=$absalti*0.3048}|'M'))
+	: ^(BASE_ALTI INT ('F'{$absalti=(float($INT.text), 'F')} |'M'{$absalti=(float($INT.text), 'M')}))
  	;
- 	
+
 altitude_specif returns [altispecif]
 @init {
     $altispecif = {}
 }
 	:
-	  ^(ALTI frag_alti (r='AGL'|r='AMSL'|r='ASFC') 
+	  ^(ALTI frag_alti (r='AGL'|r='AMSL') 
         {
-        $altispecif['basealti']=$frag_alti.absalti
-        $altispecif['ref'] = $r.text
+          $altispecif['basealti']=$frag_alti.absalti
+          $altispecif['ref'] = $r.text
         })
-	| ^(ALTI (frag_alti{$altispecif['basealti']=$frag_alti.absalti})? ('SFC') {$altispecif['ref'] = 'SFC'}) 
+	| ^(ALTI 'SFC'  {$altispecif['fromground'] = True}) 
 	| ^(ALTI FLEVEL {$altispecif['flevel']=int($FLEVEL.text[2:])})
-	| ^(ALTI 'UNL' {$altispecif['nolimit']=True})
-	| ^(ALTI 'GND' {$altispecif['fromground']=True})
+	| ^(ALTI 'UNL'  {$altispecif['nolimit']=True})
 	;
 	
 geometry returns [polygon]
