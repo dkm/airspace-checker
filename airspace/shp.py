@@ -24,6 +24,33 @@ import osgeo.osr
 import json
 import shapely.wkt
 import airspace 
+from datetime import date
+
+def setAlti(fieldName, dataDict, feature):
+    upFN = fieldName.upper()
+
+    alti, unit = dataDict.get('basealti', (None,None))
+    ref = dataDict.get('ref', "")
+    flevel = dataDict.get('flevel', -1)
+    sfc = dataDict.get('fromground', 0)
+    unl = dataDict.get('nolimit', 0)
+    
+    if alti and unit:
+        if unit == "M":
+            feature.SetField(upFN + "_ALTI_M", int(alti))
+        else: ## unit == "F"
+            feature.SetField(upFN + "_ALTI_M", int(alti) * 0.3048)
+    
+        feature.SetField(upFN + "_ALTI", alti + " " + unit)
+    else:
+        feature.SetField(upFN + "_ALTI_M", -1)
+        feature.SetField(upFN + "_ALTI", "")
+        
+    feature.SetField(upFN + "_REF", ref)
+    feature.SetField(upFN + "_FLEVEL", flevel)
+    feature.SetField(upFN + "_FROM_SURFACE", sfc)
+    feature.SetField(upFN + "_UNLIMITED", unl)
+
 
 def writeToShp(filename, zones):
     spatialRef = osgeo.osr.SpatialReference()
@@ -33,20 +60,57 @@ def writeToShp(filename, zones):
     dstLayer = dstFile.CreateLayer("layer",  spatialRef)
     
     fieldDef = osgeo.ogr.FieldDefn("NAME", osgeo.ogr.OFTString)
-    fieldDef.SetWidth(100)
     dstLayer.CreateField(fieldDef)
     
     fieldDef = osgeo.ogr.FieldDefn("CLASS", osgeo.ogr.OFTString)
-    fieldDef.SetWidth(5)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("CEILING", osgeo.ogr.OFTString)
-    fieldDef.SetWidth(200)
+    fieldDef = osgeo.ogr.FieldDefn("START_DATE", osgeo.ogr.OFTDateTime)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("FLOOR", osgeo.ogr.OFTString)
-    fieldDef.SetWidth(200)
+    fieldDef = osgeo.ogr.FieldDefn("STOP_DATE", osgeo.ogr.OFTDateTime)
     dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("EXTERNAL_INFO", osgeo.ogr.OFTString)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("CEILING_ALTI_M", osgeo.ogr.OFTReal)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("CEILING_ALTI", osgeo.ogr.OFTString)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("CEILING_REF", osgeo.ogr.OFTString)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("CEILING_FLEVEL", osgeo.ogr.OFTInteger)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("CEILING_FROM_SURFACE", osgeo.ogr.OFTInteger)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("CEILING_UNLIMITED", osgeo.ogr.OFTInteger)
+    dstLayer.CreateField(fieldDef)
+
+
+    fieldDef = osgeo.ogr.FieldDefn("FLOOR_ALTI_M", osgeo.ogr.OFTReal)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("FLOOR_ALTI", osgeo.ogr.OFTString)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("FLOOR_REF", osgeo.ogr.OFTString)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("FLOOR_FLEVEL", osgeo.ogr.OFTInteger)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("FLOOR_FROM_SURFACE", osgeo.ogr.OFTInteger)
+    dstLayer.CreateField(fieldDef)
+
+    fieldDef = osgeo.ogr.FieldDefn("FLOOR_UNLIMITED", osgeo.ogr.OFTInteger)
+    dstLayer.CreateField(fieldDef)
+
 
     for z in zones:
         meta,geometry = z.meta, z.geometry
@@ -57,13 +121,18 @@ def writeToShp(filename, zones):
 
         feature.SetField("NAME", meta['name'].encode("utf-8"))
         feature.SetField("CLASS", meta['class'].encode("utf-8"))
-        feature.SetField("CEILING", json.dumps(meta['ceiling']))
-        feature.SetField("FLOOR", json.dumps(meta['floor']))
+
+        
+        setAlti("CEILING", meta['ceiling'], feature)
+        setAlti("FLOOR", meta['floor'], feature)
+
+        feature.SetField("START_DATE", date.today())
+        feature.SetField("STOP_DATE", date.today())
+        
         dstLayer.CreateFeature(feature)
 
         feature.Destroy()
             
-
     dstFile.Destroy()
         
 
