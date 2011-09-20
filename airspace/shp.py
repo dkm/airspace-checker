@@ -37,19 +37,19 @@ def setAlti(fieldName, dataDict, feature):
     
     if alti and unit:
         if unit == "M":
-            feature.SetField(upFN + "_ALTI_M", int(alti))
+            feature.SetField(upFN + "_ALTIM", int(alti))
         else: ## unit == "F"
-            feature.SetField(upFN + "_ALTI_M", int(alti) * 0.3048)
+            feature.SetField(upFN + "_ALTIM", int(alti) * 0.3048)
     
-        feature.SetField(upFN + "_ALTI", alti + " " + unit)
+        feature.SetField(upFN + "_ALTI", str(alti) + " " + unit)
     else:
-        feature.SetField(upFN + "_ALTI_M", -1)
+        feature.SetField(upFN + "_ALTIM", -1)
         feature.SetField(upFN + "_ALTI", "")
         
     feature.SetField(upFN + "_REF", ref)
-    feature.SetField(upFN + "_FLEVEL", flevel)
-    feature.SetField(upFN + "_FROM_SURFACE", sfc)
-    feature.SetField(upFN + "_UNLIMITED", unl)
+    feature.SetField(upFN + "_FL", flevel)
+    feature.SetField(upFN + "_F_SFC", sfc)
+    feature.SetField(upFN + "_UNL", unl)
 
 
 def writeToShp(filename, zones):
@@ -65,50 +65,50 @@ def writeToShp(filename, zones):
     fieldDef = osgeo.ogr.FieldDefn("CLASS", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("START_DATE", osgeo.ogr.OFTDateTime)
+    fieldDef = osgeo.ogr.FieldDefn("START_DATE", osgeo.ogr.OFTDate)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("STOP_DATE", osgeo.ogr.OFTDateTime)
+    fieldDef = osgeo.ogr.FieldDefn("STOP_DATE", osgeo.ogr.OFTDate)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("EXTERNAL_INFO", osgeo.ogr.OFTString)
+    fieldDef = osgeo.ogr.FieldDefn("EXT_INFO", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("CEILING_ALTI_M", osgeo.ogr.OFTReal)
+    fieldDef = osgeo.ogr.FieldDefn("CEIL_ALTIM", osgeo.ogr.OFTReal)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("CEILING_ALTI", osgeo.ogr.OFTString)
+    fieldDef = osgeo.ogr.FieldDefn("CEIL_ALTI", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("CEILING_REF", osgeo.ogr.OFTString)
+    fieldDef = osgeo.ogr.FieldDefn("CEIL_REF", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("CEILING_FLEVEL", osgeo.ogr.OFTInteger)
+    fieldDef = osgeo.ogr.FieldDefn("CEIL_FL", osgeo.ogr.OFTInteger)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("CEILING_FROM_SURFACE", osgeo.ogr.OFTInteger)
+    fieldDef = osgeo.ogr.FieldDefn("CEIL_F_SFC", osgeo.ogr.OFTInteger)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("CEILING_UNLIMITED", osgeo.ogr.OFTInteger)
+    fieldDef = osgeo.ogr.FieldDefn("CEIL_UNL", osgeo.ogr.OFTInteger)
     dstLayer.CreateField(fieldDef)
 
 
-    fieldDef = osgeo.ogr.FieldDefn("FLOOR_ALTI_M", osgeo.ogr.OFTReal)
+    fieldDef = osgeo.ogr.FieldDefn("FLR_ALTIM", osgeo.ogr.OFTReal)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("FLOOR_ALTI", osgeo.ogr.OFTString)
+    fieldDef = osgeo.ogr.FieldDefn("FLR_ALTI", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("FLOOR_REF", osgeo.ogr.OFTString)
+    fieldDef = osgeo.ogr.FieldDefn("FLR_REF", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("FLOOR_FLEVEL", osgeo.ogr.OFTInteger)
+    fieldDef = osgeo.ogr.FieldDefn("FLR_FL", osgeo.ogr.OFTInteger)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("FLOOR_FROM_SURFACE", osgeo.ogr.OFTInteger)
+    fieldDef = osgeo.ogr.FieldDefn("FLR_F_SFC", osgeo.ogr.OFTInteger)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("FLOOR_UNLIMITED", osgeo.ogr.OFTInteger)
+    fieldDef = osgeo.ogr.FieldDefn("FLR_UNL", osgeo.ogr.OFTInteger)
     dstLayer.CreateField(fieldDef)
 
 
@@ -123,8 +123,8 @@ def writeToShp(filename, zones):
         feature.SetField("CLASS", meta['class'].encode("utf-8"))
 
         
-        setAlti("CEILING", meta['ceiling'], feature)
-        setAlti("FLOOR", meta['floor'], feature)
+        setAlti("CEIL", meta['ceiling'], feature)
+        setAlti("FLR", meta['floor'], feature)
 
         feature.SetField("START_DATE", date.today())
         feature.SetField("STOP_DATE", date.today())
