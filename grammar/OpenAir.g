@@ -2,7 +2,7 @@ grammar OpenAir;
 
 options {
     output=AST;
-    language=Python;
+//    language=Python;
     backtrack=true;
     memoize=true;
 }
@@ -94,14 +94,17 @@ frag_alti
  	;
  	
 altitude_specif
-	:
-      frag_alti ('AGL'| 'ASFC') -> ^(ALTI frag_alti 'AGL')
-    | frag_alti ('AMSL'|'ASL')  -> ^(ALTI frag_alti 'AMSL')
-	| 'SFC'                     -> ^(ALTI 'SFC')
-	| FLEVEL                    -> ^(ALTI FLEVEL)
-	| 'UNL'                     -> ^(ALTI 'UNL')
-    | ('GND'|'SFC')             -> ^(ALTI 'SFC')
-	;
+    :
+      frag_alti 'AGL'   -> ^(ALTI frag_alti 'AGL')
+    | frag_alti 'ASFC'  -> ^(ALTI frag_alti 'AGL')
+    | frag_alti 'AMSL'  -> ^(ALTI frag_alti 'AMSL')
+    | frag_alti 'ASL'   -> ^(ALTI frag_alti 'AMSL')
+    | 'SFC'             -> ^(ALTI 'SFC')
+    | FLEVEL            -> ^(ALTI FLEVEL)
+    | 'UNL'             -> ^(ALTI 'UNL')
+    | 'GND'             -> ^(ALTI 'SFC')
+    | 'SFC'             -> ^(ALTI 'SFC')
+    ;
 	
 geometry
 	: 
