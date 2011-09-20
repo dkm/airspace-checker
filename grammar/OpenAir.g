@@ -2,7 +2,7 @@ grammar OpenAir;
 
 options {
     output=AST;
-//    language=Python;
+    language=Python;
     backtrack=true;
     memoize=true;
 }
