@@ -83,10 +83,10 @@ aclass	:	'AC' (c='A'|c='C'|c='CTR'|c='D'|c='E'|c='GP'|c='P'|c='Q'|c='R'|c='W')
 name	:	AN_NAME -> ^(NAME AN_NAME)
 	;
 
-ceiling :	'AH' altitude_specif+ -> ^(ALTIS altitude_specif+)
+ceiling :	'AH' altitude_specif -> ^(ALTIS altitude_specif)
 	;
 
-floor	:	'AL' altitude_specif+ -> ^(ALTIS altitude_specif+)
+floor	:	'AL' altitude_specif -> ^(ALTIS altitude_specif)
 	;
 
 frag_alti
@@ -99,7 +99,6 @@ altitude_specif
     | frag_alti 'ASFC'  -> ^(ALTI frag_alti 'AGL')
     | frag_alti 'AMSL'  -> ^(ALTI frag_alti 'AMSL')
     | frag_alti 'ASL'   -> ^(ALTI frag_alti 'AMSL')
-    | 'SFC'             -> ^(ALTI 'SFC')
     | FLEVEL            -> ^(ALTI FLEVEL)
     | 'UNL'             -> ^(ALTI 'UNL')
     | 'GND'             -> ^(ALTI 'SFC')
@@ -108,7 +107,7 @@ altitude_specif
 	
 geometry
 	: 
-          (single_point | circle_arc)* 
+      (single_point | circle_arc)* 
 	| circle
 	;
 	

@@ -66,23 +66,18 @@ name returns [name]	: ^(NAME AN_NAME) {$name = $AN_NAME.text[3:].strip()}
 	;
 
 ceiling returns [ceiling]
-@init {
-    $ceiling = []
-}
  	: ^(ALTIS (altitude_specif {
-                  $ceiling.append($altitude_specif.altispecif)
-               })+)
+                  $ceiling = $altitude_specif.altispecif
+               }))
 	;
 
 floor returns [floor]
-@init{
-    $floor = []
-}
-    : ^(ALTIS (altitude_specif {$floor.append($altitude_specif.altispecif)})+)
+    : ^(ALTIS (altitude_specif {$floor = $altitude_specif.altispecif}))
 	;
 
 frag_alti returns [absalti]
-	: ^(BASE_ALTI INT ('F'{$absalti=(float($INT.text), 'F')} |'M'{$absalti=(float($INT.text), 'M')}))
+	: ^(BASE_ALTI INT ('F'{$absalti=(float($INT.text), 'F')} 
+                      |'M'{$absalti=(float($INT.text), 'M')}))
  	;
 
 altitude_specif returns [altispecif]
