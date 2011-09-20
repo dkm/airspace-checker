@@ -150,7 +150,7 @@ def findNearestPoints2(line, point1, point2):
     return ((nn1, nn1_idx), (nn2, nn2_idx))
 
 
-coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>N|S) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>E|W)'
+coords = '(?P<lat%s>\d+:\d+(:|\.)\d+)\s?(?P<d1%s>[NSns]) (?P<lon%s>\d+:\d+(:|\.)\d+)\s?(?P<d2%s>[EWew])'
 
 def rawLatLonConv(raw):
     m = re.match(coords % ("","","",""), raw)
