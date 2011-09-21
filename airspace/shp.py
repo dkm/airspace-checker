@@ -65,10 +65,12 @@ def writeToShp(filename, zones):
     fieldDef = osgeo.ogr.FieldDefn("CLASS", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("START_DATE", osgeo.ogr.OFTDate)
+    # DateTime not supported, fallback to String as we really need
+    # Time info for zone.
+    fieldDef = osgeo.ogr.FieldDefn("START_DATE", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
-    fieldDef = osgeo.ogr.FieldDefn("STOP_DATE", osgeo.ogr.OFTDate)
+    fieldDef = osgeo.ogr.FieldDefn("STOP_DATE", osgeo.ogr.OFTString)
     dstLayer.CreateField(fieldDef)
 
     fieldDef = osgeo.ogr.FieldDefn("EXT_INFO", osgeo.ogr.OFTString)
@@ -126,8 +128,8 @@ def writeToShp(filename, zones):
         setAlti("CEIL", meta['ceiling'], feature)
         setAlti("FLR", meta['floor'], feature)
 
-        feature.SetField("START_DATE", date.today())
-        feature.SetField("STOP_DATE", date.today())
+        feature.SetField("START_DATE", date.today().strftime("%d/%m/%Y-%H:%M"))
+        feature.SetField("STOP_DATE", date.today().strftime("%d/%m/%Y-%H:%M"))
         
         dstLayer.CreateFeature(feature)
 
