@@ -128,8 +128,8 @@ def writeToShp(filename, zones):
         setAlti("CEIL", meta['ceiling'], feature)
         setAlti("FLR", meta['floor'], feature)
 
-        feature.SetField("START_DATE", date.today().strftime("%d/%m/%Y-%H:%M"))
-        feature.SetField("STOP_DATE", date.today().strftime("%d/%m/%Y-%H:%M"))
+        feature.SetField("START_DATE", date.today().strftime("%Y-%m-%d %H:%M"))
+        feature.SetField("STOP_DATE", date.today().strftime("%Y-%m-%d %H:%M"))
         
         dstLayer.CreateFeature(feature)
 
