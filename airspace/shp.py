@@ -29,11 +29,11 @@ from datetime import date
 def setAlti(fieldName, dataDict, feature):
     upFN = fieldName.upper()
 
-    alti, unit = dataDict.get('basealti', (None,None))
+    alti, unit = dataDict.get('basealti', ("",""))
     ref = dataDict.get('ref', "")
     flevel = dataDict.get('flevel', -1)
-    sfc = dataDict.get('fromground', 0)
-    unl = dataDict.get('nolimit', 0)
+    sfc = 1 if dataDict.get('fromground', False) else 0
+    unl = 1 if dataDict.get('nolimit', False) else 0
     
     if alti and unit:
         if unit == "M":
@@ -42,6 +42,9 @@ def setAlti(fieldName, dataDict, feature):
             feature.SetField(upFN + "_ALTIM", int(alti) * 0.3048)
     
         feature.SetField(upFN + "_ALTI", str(alti) + " " + unit)
+    elif flevel != -1:
+        feature.SetField(upFN + "_ALTIM", flevel * 100 * 0.3048)
+        feature.SetField(upFN + "_ALTI", "")
     else:
         feature.SetField(upFN + "_ALTIM", -1)
         feature.SetField(upFN + "_ALTI", "")
@@ -116,7 +119,6 @@ def writeToShp(filename, zones):
 
     for z in zones:
         meta,geometry = z.meta, z.geometry
-
         buf = osgeo.ogr.CreateGeometryFromWkt(shapely.wkt.dumps(geometry))
         feature = osgeo.ogr.Feature(dstLayer.GetLayerDefn())
         feature.SetGeometry(buf)
