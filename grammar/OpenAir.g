@@ -25,10 +25,6 @@ tokens {
 FLEVEL	:	'FL' '0'..'9'+
 	;
 	
-ID  :	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-    ;
-
-
 COORDS
 	: '0'..'9'+ ' '* ':'  ' '* '0'..'9'+ ' '* (':'|'.') ' '* '0'..'9'+ ' '* ('N'|'S'|'n'|'s') 
       ' '* '0'..'9'+ ' '* ':' ' '* '0'..'9'+ ' '* (':'|'.') ' '* '0'..'9'+ ' '* ('E'|'W'|'e'|'w')
@@ -46,7 +42,13 @@ FLOAT
 AN_NAME
 	: 'AN' ~('\n'|'\r')* '\r'? '\n'
 	;
-	
+
+AGL : ('AGL')|('ASFC');
+AMSL: ('ASL')|('AMSL');
+
+ID  :   ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+    ;
+
 COMMENT
     :   '//' ~('\n'|'\r')* '\r'? '\n' {$channel=HIDDEN;}
     |   '*' ~('\n'|'\r')* '\r'? '\n' {$channel=HIDDEN;}
@@ -95,10 +97,8 @@ frag_alti
  	
 altitude_specif
     :
-      frag_alti 'AGL'   -> ^(ALTI frag_alti 'AGL')
-    | frag_alti 'ASFC'  -> ^(ALTI frag_alti 'AGL')
-    | frag_alti 'AMSL'  -> ^(ALTI frag_alti 'AMSL')
-    | frag_alti 'ASL'   -> ^(ALTI frag_alti 'AMSL')
+      frag_alti AGL     -> ^(ALTI frag_alti AGL)
+    | frag_alti AMSL    -> ^(ALTI frag_alti AMSL)
     | FLEVEL            -> ^(ALTI FLEVEL)
     | 'UNL'             -> ^(ALTI 'UNL')
     | 'GND'             -> ^(ALTI 'SFC')

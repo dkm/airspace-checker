@@ -85,11 +85,11 @@ altitude_specif returns [altispecif]
     $altispecif = {}
 }
 	:
-	  ^(ALTI frag_alti (r='AGL'|r='AMSL') 
-        {
-          $altispecif['basealti']=$frag_alti.absalti
-          $altispecif['ref'] = $r.text
-        })
+	  ^(ALTI frag_alti {
+                    $altispecif['basealti']=$frag_alti.absalti
+                 } (AGL  {$altispecif['ref'] = 'AGL'} |
+                    AMSL {$altispecif['ref']='AMSL'}) 
+        )
 	| ^(ALTI 'SFC'  {$altispecif['fromground'] = True}) 
 	| ^(ALTI FLEVEL {$altispecif['flevel']=int($FLEVEL.text[2:])})
 	| ^(ALTI 'UNL'  {$altispecif['nolimit']=True})
